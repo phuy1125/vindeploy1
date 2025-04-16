@@ -2,8 +2,8 @@
 
 export default function Home() {
   return (
-    <div>
-      Home
-    </div>
+      <div>
+        <p className="text-3xl text-black-900">Home</p>
+      </div>
   );
 }
