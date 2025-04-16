@@ -1,9 +1,16 @@
+"use client"
+import dynamic from "next/dynamic";
 
+// Dynamic import với SSR disabled vì Leaflet cần window object
+const VietnamMapWithNoSSR = dynamic(
+  () => import('./components/VietnamMap'),
+  { ssr: false }
+);
 
 export default function Home() {
   return (
-      <div>
-        <p className="text-3xl text-black-900">Home</p>
-      </div>
+    <main style={{ width: '100%', height: '100vh', padding: 0, margin: 0 }}>
+      <VietnamMapWithNoSSR />
+    </main>
   );
 }
