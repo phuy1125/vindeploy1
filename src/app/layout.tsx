@@ -6,7 +6,7 @@ export default function RootLayout({ children }){
       <body>
         <header>
         <nav
-         className="w-full mx-auto relative z-10 flex items-center justify-between dark:bg-white bg-black/80 py-4 text-white dark:text-black border-b border-green-600/20 dark:border-green-600/20 shadow-lg shadow-green-400/20">
+         className="w-full mx-auto relative z-10 flex items-center justify-between bg-white py-4 text-black border-b border-green-600/20 dark:border-green-600/20 shadow-lg shadow-green-400/20">
         <div className="flex-shrink-0 px-4">
             <a href="#" className="text-xl font-bold text-gray-700">
                 <span className="px-1 bg-green-400 rounded-full animate-[ping_1.9s_linear_infinite]">V</span>

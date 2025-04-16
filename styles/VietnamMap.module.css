@@ -1,0 +1,76 @@
+.mapContainer {
+	position: relative;
+	width: 100%;
+	height: 100vh;
+  }
+  
+  .map {
+	height: 100vh; /* Chiếm toàn bộ chiều cao màn hình */
+	width: 100%;
+	border: 0;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+	border-radius: 10px;
+	overflow: hidden;
+  }
+  
+  .backBtn {
+	position: absolute;
+	top: 20px;
+	left: 20px;
+	z-index: 1000;
+	background-color: #007bff;
+	color: white;
+	border: none;
+	padding: 12px 24px;
+	border-radius: 8px;
+	cursor: pointer;
+	font-size: 18px;
+	box-shadow: 0 6px 14px rgba(0, 123, 255, 0.6);
+	transition: background-color 0.3s, box-shadow 0.3s ease;
+  }
+  
+  .backBtn:hover {
+	background-color: #0056b3;
+	box-shadow: 0 8px 16px rgba(0, 123, 255, 0.8);
+  }
+  
+  .backBtn:focus {
+	outline: none;
+  }
+  
+  /* Styles cho Leaflet */
+  :global(.leaflet-popup-content) {
+	font-family: 'Arial', sans-serif;
+	font-size: 14px;
+	color: #333;
+  }
+  
+  :global(.leaflet-popup-content h3) {
+	font-size: 20px;
+	font-weight: bold;
+	color: #007bff;
+	text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+  }
+  
+  :global(.leaflet-popup-content p) {
+	margin: 5px 0;
+  }
+  
+  :global(.leaflet-popup) {
+	border-radius: 10px;
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+	transition: transform 0.3s ease;
+  }
+  
+  :global(.leaflet-popup-content h3:hover) {
+	color: #0056b3;
+  }
+  
+  :global(.leaflet-interactive) {
+	transition: fill-color 0.3s ease, color 0.3s ease;
+  }
+  
+  :global(.leaflet-interactive:hover) {
+	fill-color: #ff7f50 !important;
+	color: #ff4500 !important;
+  }
