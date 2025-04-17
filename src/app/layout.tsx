@@ -3,7 +3,7 @@
 import { ReactNode } from "react";
 import "./globals.css";
 import Link from "next/link";
-import { FaFacebookF, FaInstagram, FaLinkedinIn, FaYoutube } from 'react-icons/fa';
+import { FaFacebookF, FaInstagram, FaLinkedinIn } from 'react-icons/fa';
 import { useState } from 'react';
 type Props = {
   children: ReactNode;
@@ -40,16 +40,18 @@ export default function RootLayout({ children }: Props){
       </Link>
 
       {/* Không gian chia sẻ */}
+      <Link href="/share-space">
       <li
         onClick={() => setActive('share')}
         className={`rounded-b px-2 ${
           active === 'share'
-            ? 'border-b-[3px] border-blue-600 font-bold'
-            : 'hover:border-b-[3px] hover:border-blue-600 hover:font-bold group-hover:border-b-0'
+          ? 'border-b-[3px] border-blue-600 font-bold'
+          : 'hover:border-b-[3px] hover:border-blue-600 hover:font-bold group-hover:border-b-0'
         }`}
-      >
+        >
         Không gian chia sẻ
       </li>
+        </Link>
 
       {/* Về chúng tôi */}
       <Link href="/aboutus" onClick={() => setActive('about')}>
