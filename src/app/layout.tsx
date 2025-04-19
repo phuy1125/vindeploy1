@@ -3,7 +3,7 @@
 import { ReactNode } from "react";
 import "./globals.css";
 import Link from "next/link";
-import { FaFacebookF, FaInstagram, FaLinkedinIn, FaYoutube } from 'react-icons/fa';
+import { FaFacebookF, FaInstagram, FaLinkedinIn } from 'react-icons/fa';
 import { useState } from 'react';
 type Props = {
   children: ReactNode;
@@ -40,16 +40,18 @@ export default function RootLayout({ children }: Props){
       </Link>
 
       {/* Không gian chia sẻ */}
+      <Link href="/share-space">
       <li
         onClick={() => setActive('share')}
         className={`rounded-b px-2 ${
           active === 'share'
-            ? 'border-b-[3px] border-blue-600 font-bold'
-            : 'hover:border-b-[3px] hover:border-blue-600 hover:font-bold group-hover:border-b-0'
+          ? 'border-b-[3px] border-blue-600 font-bold'
+          : 'hover:border-b-[3px] hover:border-blue-600 hover:font-bold group-hover:border-b-0'
         }`}
-      >
+        >
         Không gian chia sẻ
       </li>
+        </Link>
 
       {/* Về chúng tôi */}
       <Link href="/aboutus" onClick={() => setActive('about')}>
@@ -67,17 +69,18 @@ export default function RootLayout({ children }: Props){
 
 
             <div className="hidden md:flex justify-start pl-2 pr-10 py-1 gap-12 ">
-            <a href=""
-              className="bg-white text-white border-2 border-blue-800 rounded px-6 py-2 rounded-md relative overflow-hidden group hover:bg-gradient-to-r hover:from-blue-500 hover:via-indigo-400 hover:to-purple-500">
-              <span className="relative group-hover:text-white z-10 font-bold text-gray-800 ">Đăng nhập</span>
-            </a>
-        <a href=""
-            className="bg-gradient-to-r from-blue-500 via-indigo-400 to-purple-500 text-white px-6 py-2 rounded-md relative overflow-hidden group">
-            <span
-                className="absolute top-0 left-0 w-full h-full bg-white opacity-20 transform -skew-x-12 -translate-x-full group-hover:translate-x-0 transition duration-500"
-            ></span>
-            <span className="relative group-hover:text-white z-10 font-bold text-gray-800">Đăng kí</span>
-        </a>
+            <Link
+              href="/login"
+              className="bg-white text-white border-2 border-blue-800 rounded px-6 py-2 rounded-md relative overflow-hidden group hover:bg-gradient-to-r hover:from-blue-500 hover:via-indigo-400 hover:to-purple-500"
+            >
+              <span className="relative group-hover:text-white z-10 font-bold text-gray-800">
+                Đăng nhập
+              </span>
+            </Link> 
+            <Link href="/register" className="bg-gradient-to-r from-blue-500 via-indigo-400 to-purple-500 text-white px-6 py-2 rounded-md relative overflow-hidden group">
+              <span className="absolute top-0 left-0 w-full h-full bg-white opacity-20 transform -skew-x-12 -translate-x-full group-hover:translate-x-0 transition duration-500"></span>
+              <span className="relative group-hover:text-white z-10 font-bold text-gray-800">Đăng kí</span>
+            </Link>
             </div>
     </nav>
         </header>
