@@ -3,10 +3,11 @@ import connectDb from "../../../src/lib/mongoose";
 import User from "../../../src/models/user";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-
+import { ObjectId } from "mongodb";
 type SuccessResponse = {
   message: string;
   token: string;
+  userId: string; 
 };
 
 type ErrorResponse = {
@@ -47,10 +48,12 @@ export default async function handler(
     if (!secret) {
       throw new Error("JWT_SECRET không được định nghĩa trong biến môi trường");
     }
+     // Ép kiểu user._id thành string (dùng toString())
+    const userId = (user._id as ObjectId).toString();
+    const token = jwt.sign({ userId }, secret, { expiresIn: "1h" });
 
-    const token = jwt.sign({ userId: user._id }, secret, { expiresIn: "1h" });
+    return res.status(200).json({ message: "Login successful", token, userId });
 
-    return res.status(200).json({ message: "Đăng nhập thành công", token });
   } catch (error) {
     if (error instanceof Error) {
       console.error("Lỗi đăng nhập:", error.message);
