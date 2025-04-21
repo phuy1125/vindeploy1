@@ -13,6 +13,8 @@ import {
   CLASSIFY_INTENT_PROMPT,
   SYSTEM_PROMPT_TEMPLATE,
   DATABASE_SYSTEM_PROMPT,
+  WEBSITE_INFO_PROMPT,
+  SEARCH_SYSTEM_PROMPT,
 } from "./prompt";
 import { TOOLS } from "../agent/tools";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
@@ -21,15 +23,21 @@ import "dotenv/config";
 const intentSchema = z.object({
   query: z.string().describe("The user query or input to classify the intent"),
   intentType: z
-    .enum([Intent.Database, Intent.General, Intent.Search])
+    .enum([
+      Intent.General,
+      Intent.Search,
+      Intent.Greeting,
+      Intent.Accommodation,
+      Intent.Destination,
+      Intent.Transportation,
+      Intent.Activities,
+    ])
     .describe("The type of intent"),
 });
 
 async function classifyIntent(
   state: typeof GraphAnnotation.State
 ): Promise<typeof GraphAnnotation.Update> {
-  console.log("Graph's state in node classifyIntent:", state);
-
   const model = new ChatGoogleGenerativeAI({
     model: "gemini-2.0-flash",
     temperature: 0,
@@ -73,14 +81,26 @@ async function callModel(
   const intent = state.intent; // Get the intent from the state
 
   switch (intent) {
-    case "database":
-      promptTemplate = DATABASE_SYSTEM_PROMPT;
-      break;
     case "general":
       promptTemplate = SYSTEM_PROMPT_TEMPLATE;
       break;
     case "search":
-      promptTemplate = SYSTEM_PROMPT_TEMPLATE;
+      promptTemplate = SEARCH_SYSTEM_PROMPT;
+      break;
+    case "greeting":
+      promptTemplate = WEBSITE_INFO_PROMPT;
+      break;
+    case "accommodation":
+      promptTemplate = SEARCH_SYSTEM_PROMPT;
+      break;
+    case "destination":
+      promptTemplate = SEARCH_SYSTEM_PROMPT;
+      break;
+    case "transportation":
+      promptTemplate = SEARCH_SYSTEM_PROMPT;
+      break;
+    case "activities":
+      promptTemplate = SEARCH_SYSTEM_PROMPT;
       break;
     default:
       promptTemplate = SYSTEM_PROMPT_TEMPLATE;
