@@ -12,6 +12,7 @@ export const config = {
   },
 };
 
+
 export async function POST(req: Request) {
   try {
     if (!req.body) {
@@ -134,3 +135,4 @@ export async function GET() {
     return NextResponse.json({ message: 'Failed to fetch posts', error: message }, { status: 500 });
   }
 }
+
