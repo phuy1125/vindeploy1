@@ -18,7 +18,7 @@ export default async function handler(
   res: NextApiResponse<SuccessResponse | ErrorResponse>
 ) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Only POST requests are allowed' });
+    return res.status(405).json({ message: 'Chỉ chấp nhận yêu cầu POST' });
   }
 
   const { email, password, confirmPassword } = req.body as {
@@ -28,7 +28,7 @@ export default async function handler(
   };
 
   if (password !== confirmPassword) {
-    return res.status(400).json({ message: 'Passwords do not match' });
+    return res.status(400).json({ message: 'Mật khẩu không khớp' });
   }
 
   try {
@@ -36,7 +36,7 @@ export default async function handler(
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'Người dùng đã tồn tại' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -48,12 +48,12 @@ export default async function handler(
       }).save()) as typeof User.prototype;
       
       return res.status(201).json({
-        message: 'User registered successfully',
+        message: 'Đăng ký người dùng thành công',
         userId: newUser._id.toString(),
       });
       
   } catch (error) {
-    console.error('Registration error:', error);
-    return res.status(500).json({ message: 'Something went wrong', error });
+    console.error('Lỗi đăng ký:', error);
+    return res.status(500).json({ message: 'Có lỗi xảy ra', error });
   }
 }
