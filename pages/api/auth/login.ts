@@ -3,10 +3,11 @@ import connectDb from "../../../src/lib/mongoose";
 import User from "../../../src/models/user";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-
+import { ObjectId } from "mongodb";
 type SuccessResponse = {
   message: string;
   token: string;
+  userId: string; 
 };
 
 type ErrorResponse = {
@@ -47,10 +48,11 @@ export default async function handler(
     if (!secret) {
       throw new Error("JWT_SECRET is not defined in environment variables");
     }
+     // Ép kiểu user._id thành string (dùng toString())
+    const userId = (user._id as ObjectId).toString();
+    const token = jwt.sign({ userId }, secret, { expiresIn: "1h" });
 
-    const token = jwt.sign({ userId: user._id }, secret, { expiresIn: "1h" });
-
-    return res.status(200).json({ message: "Login successful", token });
+    return res.status(200).json({ message: "Login successful", token, userId });
   } catch (error) {
     if (error instanceof Error) {
       console.error("Login error:", error.message);

@@ -25,12 +25,13 @@ export default function Login() {
         body: JSON.stringify({ email, password }),
       });
 
-      const data: { message?: string; token?: string } = await res.json();
+      const data: { message?: string; token?: string, userId?: string  } = await res.json();
 
       if (!res.ok) {
         setError(data.message || "Something went wrong");
       } else {
         localStorage.setItem("authToken", data.token || "");
+        localStorage.setItem("userId", data.userId || "");
         router.push("/");
       }
     } catch (err) {
