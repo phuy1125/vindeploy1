@@ -2,115 +2,143 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 
 export default function Register() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [success, setSuccess] = useState<boolean>(false);
+  const [isChecked, setIsChecked] = useState<boolean>(false); // Thêm state theo dõi checkbox
+  const router = useRouter();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError(null);
-    setLoading(true);
-
+    setError(null);  // Reset lỗi trước khi gửi yêu cầu
+    setLoading(true); // Bắt đầu quá trình xử lý
+  
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, confirmPassword }),
       });
-
+  
       const data = await res.json();
-
+  
       if (!res.ok) {
+        // Xử lý các lỗi từ server, có thể là lỗi 400, 409, 500
         setError(data.message || "Something went wrong");
       } else {
-        setSuccess(true);
+        setSuccess(true); // Đăng ký thành công
         console.log("User registered successfully:", data);
+        router.push('/login')
       }
     } catch (err) {
       console.error("Error:", err);
+      // Xử lý lỗi nếu có vấn đề với yêu cầu API
       setError("Something went wrong. Please try again.");
     } finally {
-      setLoading(false);
+      setLoading(false); // Đặt lại trạng thái loading sau khi hoàn thành
     }
-  };
+  };  
 
   return (
-    <div className="flex justify-center items-center min-h-[90vh] w-full bg-gradient-to-r from-blue-500 to-purple-500">
-      <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl shadow-lg w-full max-w-lg sm:max-w-xl">
-        <h1 className="text-3xl font-bold text-center text-gray-700 mb-6">Sign Up</h1>
-
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-        {success && <p className="text-green-600 text-center mb-4">✅ Registered successfully!</p>}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-lg text-gray-600 mb-2">Email</label>
-            <input
-              id="email"
-              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+    <div className="flex flex-col justify-center sm:h-screen p-4">
+      <div className="max-w-md w-full mx-auto border-4 border-slate-300 rounded-2xl p-8">
+        <div className="text-center mb-8">
+            <Image
+              src="/img/Logo_merus.png" // Thay đổi đường dẫn tới ảnh trong thư mục public
+              alt="Logo"
+              width={160} // Adjust width as per your design
+              height={40} // Adjust height as per your design
+              className="w-40 inline-block"
             />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-lg text-gray-600 mb-2">Password</label>
-            <input
-              id="password"
-              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="confirmPassword" className="block text-lg text-gray-600 mb-2">Confirm Password</label>
-            <input
-              id="confirmPassword"
-              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-              type="password"
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:bg-gradient-to-l transition duration-300 ease-in-out"
-          >
-            {loading ? "Loading..." : "Sign Up"}
-          </button>
-
-          <div className="flex items-center justify-center mt-4">
-            <span className="text-sm text-gray-600">Already have an account?</span>
-            <Link href="/login" className="text-blue-400 text-sm ml-1">
-              Log In
-            </Link>
-          </div>
-        </form>
-
-        <div className="text-center mt-6 text-sm text-gray-600">
-          <p>
-            By signing up, you agree to our{" "}
-            <Link href="#" className="text-blue-400">Terms</Link> and{" "}
-            <Link href="#" className="text-blue-400">Privacy Policy</Link>.
-          </p>
         </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-6">
+            {error && (
+                <div className="text-red-500 text-center mb-4">{error}</div>
+            )}
+            {success && (
+                <div className="text-green-600 text-center mb-4">Đăng ký thành công!</div>
+            )}      
+
+            <div>
+              <label className="text-slate-800 text-sm font-medium mb-2 block">Email</label>
+              <input
+                name="email"
+                type="email"
+                className="text-slate-800 bg-white border border-slate-300 w-full text-sm px-4 py-3 rounded-md outline-blue-500"
+                placeholder="Nhập email của bạn"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-slate-800 text-sm font-medium mb-2 block">Mật khẩu</label>
+              <input
+                name="password"
+                type="password"
+                className="text-slate-800 bg-white border border-slate-300 w-full text-sm px-4 py-3 rounded-md outline-blue-500"
+                placeholder="Nhập mật khẩu"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-slate-800 text-sm font-medium mb-2 block">Xác nhận mật khẩu</label>
+              <input
+                name="cpassword"
+                type="password"
+                className="text-slate-800 bg-white border border-slate-300 w-full text-sm px-4 py-3 rounded-md outline-blue-500"
+                placeholder="Nhập lại mật khẩu"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            
+
+            <div className="flex items-center">
+              <input
+                id="remember-me"
+                name="remember-me"
+                type="checkbox"
+                className="h-4 w-4 shrink-0 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
+                checked={isChecked}
+                onChange={(e) => setIsChecked(e.target.checked)} // Cập nhật trạng thái của checkbox
+              />
+              <label htmlFor="remember-me" className="text-slate-800 ml-3 block text-sm">
+                Tôi đồng ý với <a href="javascript:void(0);" className="text-blue-600 font-medium hover:underline ml-1">Điều khoản và Điều kiện</a>
+              </label>
+            </div>
+          </div>
+
+          <div className="mt-12">
+            <button
+              type="submit"
+              disabled={loading || !isChecked} // Disable nút submit nếu checkbox chưa được tick
+              className="w-full py-3 px-4 text-sm tracking-wider font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
+            >
+              {loading ? "Đang xử lý..." : "Tạo tài khoản"}
+            </button>
+          </div>
+
+          <p className="text-slate-800 text-sm mt-6 text-center">
+            Đã có tài khoản? <Link href="/login" className="text-blue-600 font-medium hover:underline ml-1">Đăng nhập tại đây</Link>
+          </p>
+        </form>
       </div>
     </div>
   );

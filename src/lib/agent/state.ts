@@ -3,8 +3,12 @@ import { Annotation, MessagesAnnotation } from "@langchain/langgraph";
 
 export enum Intent {
   General = "general",
-  Database = "database",
   Search = "search",
+  Greeting = "greeting",
+  Accommodation = "accommodation",
+  Destination = "destination",
+  Transportation = "transportation",
+  Activities = "activities",
 }
 
 export const GraphAnnotation = Annotation.Root({
