@@ -13,7 +13,7 @@ import {
 import { useState } from "react";
 
 // Dynamic import with SSR disabled for VietnamMap
-const VietnamMapWithNoSSR = dynamic(() => import("./VietnamMap"), {
+const VietnamMapWithNoSSR = dynamic(() => import("./map/VietnamMap"), {
   ssr: false,
 });
 
