@@ -23,6 +23,7 @@
       "@lib/*": ["./src/lib/*"],
       "@models/*": ["./src/models/*"],
       "@context/*": ["./src/context/*"],
+      "@components/*": ["./src/components/*"],
       "@actions/*": ["./src/actions/*"]
     }
   },

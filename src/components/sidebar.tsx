@@ -1,7 +1,6 @@
-// components/sidebar.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   MessageSquare,
@@ -18,6 +17,9 @@ import {
 
 export default function Sidebar() {
   const [activeItem, setActiveItem] = useState("chats");
+  const [userName, setUserName] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userID, setUserID] = useState<string | null>(null);
 
   const navItems = [
     { id: "chats", label: "Trò chuyện", icon: MessageSquare, count: 4 },
@@ -27,6 +29,24 @@ export default function Sidebar() {
     { id: "inspiration", label: "Cảm hứng", icon: Lightbulb },
     { id: "create", label: "Tạo lịch trình", icon: PenSquare },
   ];
+
+  // Lấy thông tin người dùng từ API (dựa trên email trong localStorage)
+  useEffect(() => {
+    const email = localStorage.getItem("userEmail"); // Lấy email từ localStorage (hoặc session)
+
+    if (email) {
+      fetch(`/api/getUserInfo?email=${email}`)
+        .then((response) => response.json())
+        .then((data) => {
+          setUserName(data.name); // Lấy tên người dùng từ dữ liệu trả về
+          setUserEmail(data.email); // Lấy email người dùng
+          setUserID(data.userID); // Lấy userID từ dữ liệu trả về
+        })
+        .catch((error) => {
+          console.error("Error fetching user info:", error);
+        });
+    }
+  }, []);
 
   return (
     <div className="w-full h-[98%] flex flex-col bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
@@ -87,11 +107,18 @@ export default function Sidebar() {
       <div className="p-4 border-t border-gray-100 mb-0">
         <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-all">
           <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-500 rounded-full flex items-center justify-center text-sm font-medium text-white shadow-md">
-            NM
+            {userName ? userName.charAt(0).toUpperCase() : "NM"}{" "}
+            {/* Hiển thị chữ cái đầu tiên của tên người dùng */}
           </div>
           <div className="text-sm">
-            <div className="font-medium text-gray-800">Ngọc Minh Lộc</div>
-            <div className="text-gray-400 text-xs">@locminh_2809</div>
+            <div className="font-medium text-gray-800">
+              {userName || "Not Found"}
+            </div>{" "}
+            {/* Hiển thị tên người dùng */}
+            <div className="text-gray-400 text-xs">
+              {userEmail || null}
+            </div>{" "}
+            {/* Hiển thị email */}
           </div>
           <div className="ml-auto flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors">
             <svg
