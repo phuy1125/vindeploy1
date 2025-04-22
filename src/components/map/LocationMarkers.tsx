@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import L from "leaflet";
+import { useEffect, useState } from 'react';
+import L from 'leaflet';
+import { useRouter } from 'next/navigation';
+
+
 
 interface Location {
+  _id: string;
   name: string;
   description?: string;
   coordinates: {
@@ -37,6 +41,7 @@ const LocationMarkers = ({
   shouldClear,
 }: LocationMarkersProps) => {
   const [markers, setMarkers] = useState<L.Marker[]>([]);
+  const router = useRouter();  // Hook để điều hướng trang
 
   useEffect(() => {
     if (!map || !provinceGid) return;
@@ -61,9 +66,12 @@ const LocationMarkers = ({
             icon: pulseIcon,
           })
             .addTo(map)
-            .bindPopup(
-              `<strong>${loc.name}</strong><br/>${loc.description || ""}`
-            );
+            .bindPopup(`<strong>${loc.name}</strong><br/>${loc.description || ''}`)
+            .on('click', () => {
+              // Khi click vào marker, điều hướng tới trang bài viết theo location
+              router.push(`/location/post/${loc._id}`);  // Điều hướng đến trang bài viết của location
+            });
+
 
           return marker;
         });

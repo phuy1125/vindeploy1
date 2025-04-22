@@ -77,6 +77,7 @@ export default function ChatInterface() {
 
       if (data.messages && data.messages.length > 0) {
         const aiMessages = data.messages.filter(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (msg: any) => msg.type === "constructor" && msg.id[2] === "AIMessage"
         );
 

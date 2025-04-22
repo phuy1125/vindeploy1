@@ -18,7 +18,6 @@
       if (!req.body) {
         return NextResponse.json({ message: 'Request body is null' }, { status: 400 });
       }
-
       // Read body into a Buffer
       const arrayBuffer = await req.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
@@ -122,18 +121,20 @@
     }
   }
 
-  export async function GET() {
-    try {
-      const client = await clientPromise;
-      const db = client.db();
-      const posts = await db.collection('posts').find().toArray();
-
-      return NextResponse.json(posts, { status: 200 });
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-      const message = error instanceof Error ? error.message : 'Unknown error occurred';
-      return NextResponse.json({ message: 'Failed to fetch posts', error: message }, { status: 500 });
+  export async function GET(req: Request) {
+    const client = await clientPromise;
+    const db = client.db();
+    const { searchParams } = new URL(req.url);
+    const locationId = searchParams.get("location_id");
+  
+    let query = {};
+  
+    if (locationId) {
+      query = { locationRaw: locationId };
     }
+  
+    const posts = await db.collection("posts").find(query).toArray();
+  
+    return Response.json(posts);
   }
 
-  

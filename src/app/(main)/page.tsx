@@ -1,9 +1,9 @@
 // page.tsx
 "use client";
 
-import Sidebar from "./components/sidebar";
-import ChatInterface from "./components/chat-interface";
-import MapSection from "./components/map-section";
+import Sidebar from "../../components/sidebar";
+import ChatInterface from "../../components/chat/chat-interface";
+import MapSection from "../../components/map-section";
 import { useEffect, useState } from "react";
 
 export default function Home() {

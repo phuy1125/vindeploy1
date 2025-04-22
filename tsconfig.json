@@ -23,9 +23,10 @@
       "@lib/*": ["./src/lib/*"],
       "@models/*": ["./src/models/*"],
       "@context/*": ["./src/context/*"],
+      "@components/*": ["./src/components/*"],
       "@actions/*": ["./src/actions/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/api/posts/route.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/(main)/posts/route.ts"],
   "exclude": ["node_modules"]
 }
