@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import "@/lib/plugins/L.Icon.Pulse.js";
-import "@/lib/plugins/L.Icon.Pulse.css";
+import { useEffect, useRef, useState } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import '@/lib/plugins/L.Icon.Pulse.js';
+import '@/lib/plugins/L.Icon.Pulse.css';
 
 import { MapFeature, ProvinceProperties, ProvinceStyle } from "@/types/map";
 import LocationMarkers from "./LocationMarkers";
@@ -17,6 +17,8 @@ const VietnamMap = () => {
   const [clickedLayerGid, setClickedLayerGid] = useState<number | null>(null);
   const originalStylesRef = useRef<Record<string, ProvinceStyle>>({});
   const [isMounted, setIsMounted] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   const lockMapInteraction = (map: L.Map) => {
     map.dragging.disable();
@@ -69,6 +71,51 @@ const VietnamMap = () => {
 
       layer.openPopup();
     }
+  };
+
+  const filterSuggestions = (query: string): string[] => {
+    if (!geojsonLayer) return [];
+
+    // Get all features from the GeoJSON layer
+    const allFeatures = Object.values(geojsonLayer.getLayers());
+
+    // Filter features where the province name includes the query (case insensitive)
+    const filtered = allFeatures
+      .map((layer: L.Layer) => {
+        const feature = (layer as L.Layer & { feature?: MapFeature }).feature;
+        return feature ? feature.properties.ten_tinh : null;
+      })
+      .filter((name): name is string => name !== null && name.toLowerCase().includes(query.toLowerCase()));
+
+    return filtered;
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+
+    if (query) {
+      const filtered = filterSuggestions(query);
+      setSuggestions(filtered);
+    } else {
+      setSuggestions([]);
+    }
+  };
+
+  const handleProvinceSuggestionClick = (provinceName: string) => {
+    if (!geojsonLayer || !map) return;
+
+    const targetLayer = Object.values(geojsonLayer.getLayers()).find((layer: L.Layer) => {
+      const feature = (layer as L.Layer & { feature?: MapFeature }).feature;
+      return feature && feature.properties.ten_tinh === provinceName;
+    });
+
+    if (targetLayer) {
+      const layer = targetLayer as L.Layer & { feature: MapFeature };
+      handleProvinceClick(layer, layer.feature, map, geojsonLayer);
+    }
+
+    setSuggestions([]);
   };
 
   useEffect(() => {
@@ -183,14 +230,63 @@ const VietnamMap = () => {
         handleProvinceClick(layer, feature, map, geojsonLayer)
       );
     });
-
+  
     // ✅ Reset state
     setClickedLayer(null);
-    setClickedLayerGid(null); // 👈 Dòng bạn cần
+    setClickedLayerGid(null); 
   };
 
   return (
-    <div style={{ position: "relative", width: "100%", height: "100vh" }}>
+    <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
+      <input
+        type="text"
+        value={searchQuery}
+        onChange={handleSearchChange}
+        placeholder="Search for a province"
+        style={{
+          position: 'absolute',
+          top: '60px',
+          left: '20px',
+          zIndex: 1000,
+          padding: '8px 16px',
+          fontSize: '16px',
+          borderRadius: '8px',
+          border: '1px solid #ccc',
+          boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+        }}
+      />
+      {suggestions.length > 0 && (
+        <ul
+          style={{
+            position: 'absolute',
+            top: '130px',
+            left: '20px',
+            zIndex: 1000,
+            backgroundColor: 'white',
+            width: 'calc(100% - 40px)',
+            border: '1px solid #ccc',
+            borderRadius: '8px',
+            maxHeight: '200px',
+            overflowY: 'auto',
+            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          {suggestions.map((suggestion, index) => (
+            <li
+              key={index}
+              onClick={() => handleProvinceSuggestionClick(suggestion)}
+              style={{
+                padding: '8px 16px',
+                cursor: 'pointer',
+                backgroundColor: '#f7f7f7',
+                borderBottom: '1px solid #ddd',
+              }}
+            >
+              {suggestion}
+            </li>
+          ))}
+        </ul>
+      )}
       <button
         style={{
           position: "absolute",
@@ -212,17 +308,14 @@ const VietnamMap = () => {
         Back
       </button>
 
-      <div
-        ref={mapRef}
-        style={{
-          height: "100vh",
-          width: "100%",
-          border: "0",
-          borderRadius: "10px",
-          boxShadow: "0 4px 10px rgba(0, 0, 0, 0.3)",
-          overflow: "hidden",
-        }}
-      />
+      <div ref={mapRef} style={{
+        height: '100vh',
+        width: '100%',
+        border: '0',
+        borderRadius: '10px',
+        boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)',
+        overflow: 'hidden'
+      }} />
 
       {map && (
         <LocationMarkers

@@ -30,17 +30,15 @@ export default function Login() {
         body: JSON.stringify({ email, password }),
       });
 
-      const data: { message?: string; token?: string } = await res.json();
+      const data: { message?: string; token?: string, userId?: string  } = await res.json();
 
       if (!res.ok) {
         setError(data.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
       } else {
-        setSuccess('Đăng nhập thành công!');
-        if (data.token) {
-          login(data.token); // Cập nhật trạng thái đăng nhập trong context
-          router.push('/'); // Chuyển hướng sau khi login thành công
-        }
-      }
+        localStorage.setItem("authToken", data.token || "");
+        localStorage.setItem("userId", data.userId || "");
+        router.push("/");
+       }
     } catch (err) {
       setError('Đã xảy ra lỗi bất ngờ.');
       console.error(err);
