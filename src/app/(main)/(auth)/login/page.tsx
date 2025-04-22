@@ -13,7 +13,7 @@ export default function Login() {
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
-  const { login } = useAuth(); // Lấy login từ context
+  const { login } = useAuth(); // ✅ Lấy login từ context
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -30,15 +30,22 @@ export default function Login() {
         body: JSON.stringify({ email, password }),
       });
 
-      const data: { message?: string; token?: string, userId?: string  } = await res.json();
+      const data: { message?: string; token?: string; userId?: string } = await res.json();
 
       if (!res.ok) {
         setError(data.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
       } else {
-        localStorage.setItem("authToken", data.token || "");
-        localStorage.setItem("userId", data.userId || "");
-        router.push("/");
-       }
+        if (data.token) {
+          localStorage.setItem('authToken', data.token);
+          localStorage.setItem('userId', data.userId || '');
+
+          login(data.token); // ✅ Cập nhật trạng thái vào context
+
+          router.push('/'); // ✅ Điều hướng sau khi context đã có thông tin
+        } else {
+          setError('Token không hợp lệ.');
+        }
+      }
     } catch (err) {
       setError('Đã xảy ra lỗi bất ngờ.');
       console.error(err);
@@ -46,6 +53,7 @@ export default function Login() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center">
