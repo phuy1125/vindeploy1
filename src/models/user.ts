@@ -1,6 +1,7 @@
-import mongoose, { Document, Model, Schema } from 'mongoose';
+import mongoose, { Document, Model, Schema } from "mongoose";
 
 export interface IUser extends Document {
+  username: string;
   email: string;
   password: string;
   createdAt: Date;
@@ -9,13 +10,14 @@ export interface IUser extends Document {
 
 const UserSchema: Schema<IUser> = new mongoose.Schema(
   {
+    username: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
   },
   { timestamps: true }
 );
 
-// Kiểm tra xem model đã được khai báo chưa (tránh lỗi khi hot reload)
-const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+const User: Model<IUser> =
+  mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
 
 export default User;
