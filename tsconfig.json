@@ -24,6 +24,7 @@
       "@models/*": ["./src/models/*"],
       "@context/*": ["./src/context/*"],
       "@components/*": ["./src/components/*"],
+      "@hooks/*": ["./src/hooks/*"],
       "@actions/*": ["./src/actions/*"]
     }
   },
