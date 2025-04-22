@@ -50,7 +50,7 @@ export default async function handler(
     }
      // Ép kiểu user._id thành string (dùng toString())
     const userId = (user._id as ObjectId).toString();
-    const token = jwt.sign({ userId }, secret, { expiresIn: "1h" });
+    const token = jwt.sign({ userId, email: user.email, name:user.username }, secret, { expiresIn: "1h" });
 
     return res.status(200).json({ message: "Login successful", token, userId });
 
