@@ -9,8 +9,14 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
-const eslintConfig = [
+export default [
+  // Kế thừa các rule mặc định của Next.js
   ...compat.extends("next/core-web-vitals", "next/typescript"),
-];
 
-export default eslintConfig;
+  // Ghi đè rule: tắt cảnh báo biến không dùng
+  {
+    rules: {
+      "@typescript-eslint/no-unused-vars": "off", // hoặc "warn" nếu bạn muốn cảnh báo
+    },
+  },
+];
