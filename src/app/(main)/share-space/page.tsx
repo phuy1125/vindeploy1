@@ -230,7 +230,7 @@ export default function SpaceShare() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+  const [currentImageIndices, setCurrentImageIndices] = useState<Record<string, number>>({});
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -382,18 +382,44 @@ const toggleLike = async (postId: string) => {
     return `${days} ngày, ${hours} giờ trước`;
   };
 
-  // Navigation functions for post images
-  const nextImage = (postIndex: number) => {
-    if (posts[postIndex] && posts[postIndex].media.length > 1) {
-      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % posts[postIndex].media.length);
-    }
-  };
 
-  const prevImage = (postIndex: number) => {
-    if (posts[postIndex] && posts[postIndex].media.length > 1) {
-      setCurrentImageIndex((prevIndex) => (prevIndex - 1 + posts[postIndex].media.length) % posts[postIndex].media.length);
+
+  useEffect(() => {
+    if (posts.length > 0) {
+      const initialIndices: Record<string, number> = {};
+      posts.forEach(post => {
+        initialIndices[post._id] = 0; // Đặt index mặc định là 0 cho mỗi post
+      });
+      setCurrentImageIndices(initialIndices);
+    }
+  }, [posts]);
+
+
+  // Navigation functions for post images
+  const nextImage = (postId: string, postIndex: number) => {
+    const post = posts[postIndex];
+    if (post && post.media.length > 1) {
+      setCurrentImageIndices((prevIndices) => {
+        const currentIndex = prevIndices[postId] !== undefined ? prevIndices[postId] : 0;
+        const newIndices = { ...prevIndices };
+        newIndices[postId] = (currentIndex + 1) % post.media.length;
+        return newIndices;
+      });
     }
   };
+  
+  const prevImage = (postId: string, postIndex: number) => {
+    const post = posts[postIndex];
+    if (post && post.media.length > 1) {
+      setCurrentImageIndices((prevIndices) => {
+        const currentIndex = prevIndices[postId] !== undefined ? prevIndices[postId] : 0;
+        const newIndices = { ...prevIndices };
+        newIndices[postId] = (currentIndex - 1 + post.media.length) % post.media.length;
+        return newIndices;
+      });
+    }
+  };
+  
 
   // Open comment modal for a specific post
   const openCommentModal = (post: Post) => {
@@ -456,7 +482,7 @@ const toggleLike = async (postId: string) => {
                   {/* Main displayed image */}
                   <div className="w-[600px] h-full relative">
                     <Image
-                      src={post.media[currentImageIndex]?.media_url || "/img/placeholder.png"}
+                      src={post.media[currentImageIndices[post._id] || 0]?.media_url || "/img/placeholder.png"}
                       alt={`Image of post by ${post.author_name}`}
                       layout="fill"
                       objectFit="cover"
@@ -469,7 +495,7 @@ const toggleLike = async (postId: string) => {
                     <>
                       {/* Left arrow */}
                       <button
-                        onClick={() => prevImage(index)}
+                        onClick={() => prevImage(post._id, index)}
                         className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
                       >
                         &#10094;
@@ -477,22 +503,28 @@ const toggleLike = async (postId: string) => {
 
                       {/* Right arrow */}
                       <button
-                        onClick={() => nextImage(index)}
+                        onClick={() => nextImage(post._id, index)}
                         className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
                       >
                         &#10095;
                       </button>
 
                       {/* Image thumbnails/indicators */}
-                      <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1">
-                        {post.media.map((_, idx) => (
-                          <div
-                            key={idx}
-                            onClick={() => setCurrentImageIndex(idx)}
-                            className={`w-2 h-2 rounded-full cursor-pointer ${idx === currentImageIndex ? 'bg-white' : 'bg-white/50'}`}
-                          />
-                        ))}
-                      </div>
+                        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1">
+                          {post.media.map((_, idx) => (
+                            <div
+                              key={idx}
+                              onClick={() => {
+                                setCurrentImageIndices((prevIndices) => {
+                                  const newIndices = { ...prevIndices };
+                                  newIndices[post._id] = idx; // Set the index for this specific post
+                                  return newIndices;
+                                });
+                              }}
+                              className={`w-2 h-2 rounded-full cursor-pointer ${idx === currentImageIndices[post._id] ? 'bg-white' : 'bg-white/50'}`}
+                            />
+                          ))}
+                        </div>
                     </>
                   )}
                 </div>
