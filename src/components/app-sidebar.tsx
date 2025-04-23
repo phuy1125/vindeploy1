@@ -46,7 +46,7 @@ const data = {
       icon: IconDashboard,
     },
     {
-      title: "Lifecycle",
+      title: "Quản lý địa điểm",
       url: "#",
       icon: IconListDetails,
     },

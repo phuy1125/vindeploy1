@@ -43,10 +43,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
   };
 
-  const logout = () => {
-    localStorage.removeItem('authToken');
-    setIsLoggedIn(false);
-    setUserName(null);
+  const logout = async () => {
+    try {
+      // Gọi API logout để xóa cookie
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      if (response.ok) {
+        // Xóa localStorage nếu bạn vẫn lưu một số thông tin ở đó
+        localStorage.removeItem('authToken');
+        
+        // Cập nhật state
+        setIsLoggedIn(false);
+        setUserName(null);
+        
+        // Tùy chọn: chuyển hướng về trang login
+        // window.location.href = '/login';
+      } else {
+        console.error('Đăng xuất thất bại');
+      }
+    } catch (error) {
+      console.error('Lỗi khi đăng xuất:', error);
+    }
   };
 
   return (
