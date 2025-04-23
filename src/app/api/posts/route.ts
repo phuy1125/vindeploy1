@@ -5,6 +5,7 @@
   import clientPromise from '../../../lib/mongodb';
   import { Readable } from 'stream';
   import type { IncomingMessage } from 'http';
+  import { ObjectId } from 'mongodb';
 
   export const config = {
     api: {
@@ -121,20 +122,32 @@
     }
   }
 
-  export async function GET(req: Request) {
-    const client = await clientPromise;
-    const db = client.db();
-    const { searchParams } = new URL(req.url);
-    const locationId = searchParams.get("location_id");
+  export async function GET() {
+    try {
+      const client = await clientPromise;
+      const db = client.db();
+      const postsCollection = db.collection('posts');
+      const usersCollection = db.collection('users');
   
-    let query = {};
+      // Lấy tất cả bài post
+      const posts = await postsCollection.find({}).toArray();
   
-    if (locationId) {
-      query = { locationRaw: locationId };
+      // Gắn thêm thông tin tác giả từ bảng users
+      const enrichedPosts = await Promise.all(
+        posts.map(async (post: any) => {
+          const user = await usersCollection.findOne({ _id: new ObjectId(post.author_id) });
+          return {
+            ...post,
+            author_name: user?.username || 'Unknown',
+            author_avatar: user?.avatar || '/img/default-avatar.png',
+          };
+        })
+      );
+  
+      return NextResponse.json(enrichedPosts);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      return NextResponse.json({ message: 'Failed to fetch posts' }, { status: 500 });
     }
-  
-    const posts = await db.collection("posts").find(query).toArray();
-  
-    return Response.json(posts);
   }
 
