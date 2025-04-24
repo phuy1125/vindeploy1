@@ -27,3 +27,38 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+export async function POST(req: NextRequest) {
+  try {
+    // Get the data from the request body
+    const { name, description, lat, lng, provinceGid } = await req.json();
+
+    if (!name || !lat || !lng || !provinceGid) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    const client = await clientPromise;
+    const db = client.db();  // Connect to the MongoDB database
+    const collection = db.collection('locations');  // Access the locations collection
+
+    // Create a new location document
+    const newLocation = {
+      name,
+      description,
+      coordinates: { lat, lng },
+      provinceGid,
+    };
+
+    // Insert the new location document into the collection
+    const result = await collection.insertOne(newLocation);
+
+    // Retrieve the inserted document using insertedId
+    const insertedDocument = await collection.findOne({ _id: result.insertedId });
+
+    // Return the inserted document as a response
+    return NextResponse.json({ data: insertedDocument }, { status: 201 });
+
+  } catch (error) {
+    console.error('[ADD LOCATION API ERROR]', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

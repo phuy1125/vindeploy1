@@ -4,6 +4,7 @@ import User from "../../../src/models/user";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { ObjectId } from "mongodb";
+import { serialize } from "cookie";
 type SuccessResponse = {
   message: string;
   token: string;
@@ -51,7 +52,20 @@ export default async function handler(
      // Ép kiểu user._id thành string (dùng toString())
     const userId = (user._id as ObjectId).toString();
     const token = jwt.sign({ userId, email: user.email, name:user.username }, secret, { expiresIn: "1h" });
+// Lưu token vào cookie
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict" as const,
+  maxAge: 60 * 60 * 1000, // 1 giờ
+  path: "/",
+};
 
+// Serialize cookie
+const tokenCookie = serialize("auth_token", token, cookieOptions);
+
+// Đặt cookie trong response header
+res.setHeader("Set-Cookie", tokenCookie);
     return res.status(200).json({ message: "Login successful", token, userId });
 
   } catch (error) {
