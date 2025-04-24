@@ -1,14 +1,18 @@
+"use client";
+
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import '@/lib/plugins/L.Icon.Pulse.js';
 import '@/lib/plugins/L.Icon.Pulse.css';
+import { useRouter } from 'next/navigation';
 
 import { MapFeature, ProvinceProperties, ProvinceStyle } from '@/types/map';
 import LocationMarkers from './LocationMarkers';
 import LocationList from './LocationList';
 
 const VietnamMap = () => {
+  const router = useRouter();
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<L.Map | null>(null);
   const [geojsonLayer, setGeojsonLayer] = useState<L.GeoJSON | null>(null);
@@ -69,6 +73,10 @@ const VietnamMap = () => {
       });
 
       layer.openPopup();
+
+      if (feature.properties.gid !== undefined) {
+        router.push(`/province/${feature.properties.gid}`);
+      }
     }
   };
 
@@ -158,6 +166,7 @@ const VietnamMap = () => {
               //   ${feature.properties.gid ? `<p><strong>Mã tỉnh:</strong> ${feature.properties.gid}</p>` : ''}
               // `;
               // layer.bindPopup(popupContent);
+
 
               layer.on('click', () =>
                 handleProvinceClick(layer, feature, mapInstance, gjLayer)

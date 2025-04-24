@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import '@/lib/plugins/L.Icon.Pulse.js';
@@ -10,6 +11,7 @@ import { MapFeature, ProvinceProperties, ProvinceStyle } from "@/types/map";
 import LocationMarkers from "./LocationMarkers";
 
 const VietnamMap = () => {
+  const router = useRouter();
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<L.Map | null>(null);
   const [geojsonLayer, setGeojsonLayer] = useState<L.GeoJSON | null>(null);
@@ -70,6 +72,10 @@ const VietnamMap = () => {
       });
 
       layer.openPopup();
+      if (feature.properties.gid !== undefined) {
+        console.log('Navigating to province with gid:', feature.properties.gid);
+        router.push(`/province/${feature.properties.gid}`);
+      }
     }
   };
 
@@ -147,49 +153,43 @@ const VietnamMap = () => {
 
       fetch("/province.json")
         .then((res) => res.json())
-        .then(
-          (
-            data: GeoJSON.FeatureCollection<
-              GeoJSON.Geometry,
-              ProvinceProperties
-            >
-          ) => {
-            const gjLayer = L.geoJSON(data, {
-              onEachFeature: (feature: MapFeature, layer: L.Layer) => {
-                const layerAsPath = layer as L.Path;
+        .then((data: GeoJSON.FeatureCollection<GeoJSON.Geometry, ProvinceProperties>) => {
+          const gjLayer = L.geoJSON(data, {
+            onEachFeature: (feature: MapFeature, layer: L.Layer) => {
+              const layerAsPath = layer as L.Path;
 
-                originalStylesRef.current[feature.properties.ten_tinh] = {
-                  color: layerAsPath.options.color || "#ff7800",
-                  fillColor: layerAsPath.options.fillColor || "#ff0000",
-                  fillOpacity: layerAsPath.options.fillOpacity || 0.4,
-                };
+              originalStylesRef.current[feature.properties.ten_tinh] = {
+                color: layerAsPath.options.color || "#ff7800",
+                fillColor: layerAsPath.options.fillColor || "#ff0000",
+                fillOpacity: layerAsPath.options.fillOpacity || 0.4,
+              };
 
-                const popupContent = `
-                <h3>${feature.properties.ten_tinh}</h3>
-                ${
-                  feature.properties.gid
-                    ? `<p><strong>Mã tỉnh:</strong> ${feature.properties.gid}</p>`
-                    : ""
-                }
-              `;
-                layer.bindPopup(popupContent);
+              const popupContent = `
+              <h3>${feature.properties.ten_tinh}</h3>
+              ${
+                feature.properties.gid
+                  ? `<p><strong>Mã tỉnh:</strong> ${feature.properties.gid}</p>`
+                  : ""
+              }
+            `;
+              layer.bindPopup(popupContent);
 
-                layer.on("click", () =>
-                  handleProvinceClick(layer, feature, mapInstance, gjLayer)
-                );
-              },
-              style: () => ({
-                color: "#ff7800",
-                weight: 2,
-                opacity: 0.6,
-                fillColor: "#ff0000",
-                fillOpacity: 0.4,
-              }),
-            }).addTo(mapInstance);
+              layer.on("click", () =>
+                handleProvinceClick(layer, feature, mapInstance, gjLayer)
+              );
+            },
+            style: () => ({
+              color: "#ff7800",
+              weight: 2,
+              opacity: 0.6,
+              fillColor: "#ff0000",
+              fillOpacity: 0.4,
+            }),
+          }).addTo(mapInstance);
 
-            setGeojsonLayer(gjLayer);
-          }
-        );
+          setGeojsonLayer(gjLayer);
+        })
+        .catch((error) => console.error("Error loading provinces:", error));
     };
 
     setTimeout(initMap, 100);
