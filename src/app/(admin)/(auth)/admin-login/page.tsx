@@ -39,7 +39,7 @@ export default function AdminLogin() {
         setSuccess('Đăng nhập thành công!');
         if (data.token) {
           login(data.token); // Lưu token vào context
-          router.push('/dashboard');  // Chuyển hướng đến trang dashboard sau khi đăng nhập thành công
+          router.push('/admin');  // Chuyển hướng đến trang dashboard sau khi đăng nhập thành công
         }
       }
     } catch (err) {
