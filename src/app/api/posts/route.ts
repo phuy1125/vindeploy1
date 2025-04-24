@@ -145,13 +145,15 @@
       const { searchParams } = new URL(req.url);
       const locationId = searchParams.get("location_id");
   
-      const query: Partial<Pick<PostFromDB, "locationRaw">> = {};
+      const query: Record<string, any> = {
+        status: { $ne: '' },
+      };
+    
       if (locationId) {
         query.locationRaw = locationId;
       }
-  
+    
       const posts = await postsCollection.find(query).toArray();
-  
       const enrichedPosts = await Promise.all(
         posts.map(async (post: PostFromDB) => {
           try {

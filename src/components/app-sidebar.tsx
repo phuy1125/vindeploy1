@@ -51,8 +51,8 @@ const data = {
       icon: IconListDetails,
     },
     {
-      title: "Analytics",
-      url: "#",
+      title: "Quản lý bài đăng",
+      url: "/admin/post",
       icon: IconChartBar,
     },
     {
