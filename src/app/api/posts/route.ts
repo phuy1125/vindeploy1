@@ -122,16 +122,26 @@
     }
   }
 
-  export async function GET() {
+  export async function GET(req: Request) {
     try {
       const client = await clientPromise;
       const db = client.db();
       const postsCollection = db.collection('posts');
       const usersCollection = db.collection('users');
-  
-      // Lấy tất cả bài post
-      const posts = await postsCollection.find({}).toArray();
-  
+      
+      // Lấy query parameters
+      const { searchParams } = new URL(req.url);
+      const locationId = searchParams.get("location_id");
+      
+      // Tạo query dựa trên location_id nếu có
+      let query = {};
+      if (locationId) {
+        query = { locationRaw: locationId };
+      }
+      
+      // Lấy bài post theo query (có thể là tất cả hoặc theo location)
+      const posts = await postsCollection.find(query).toArray();
+      
       // Gắn thêm thông tin tác giả từ bảng users
       const enrichedPosts = await Promise.all(
         posts.map(async (post: any) => {
@@ -143,11 +153,10 @@
           };
         })
       );
-  
+      
       return NextResponse.json(enrichedPosts);
     } catch (error) {
       console.error('Error fetching posts:', error);
       return NextResponse.json({ message: 'Failed to fetch posts' }, { status: 500 });
     }
   }
-
