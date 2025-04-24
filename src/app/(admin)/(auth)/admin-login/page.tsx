@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { useAuth } from '@context/AuthContext'; // Lấy context để cập nhật trạng thái đăng nhập
+import { useAdminAuth } from '@/context/AdminAuthContext'; // Lấy context để cập nhật trạng thái đăng nhập
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
@@ -12,7 +12,7 @@ export default function AdminLogin() {
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
-  const { login } = useAuth(); // Sử dụng context để xử lý login
+  const { login } = useAdminAuth(); // Sử dụng context để xử lý login
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -39,7 +39,7 @@ export default function AdminLogin() {
         setSuccess('Đăng nhập thành công!');
         if (data.token) {
           login(data.token); // Lưu token vào context
-          router.push('/dashboard');  // Chuyển hướng đến trang dashboard sau khi đăng nhập thành công
+          router.push('/admin');  // Chuyển hướng đến trang dashboard sau khi đăng nhập thành công
         }
       }
     } catch (err) {
