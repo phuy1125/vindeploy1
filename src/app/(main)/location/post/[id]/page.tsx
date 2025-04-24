@@ -1,10 +1,14 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback,ChangeEvent, FormEvent } from 'react';
 
 import { useParams } from "next/navigation";
-import { AiOutlineHeart, AiOutlineComment, AiFillHeart } from 'react-icons/ai';
+import { AiOutlineHeart, AiOutlineComment, AiFillHeart, AiOutlinePlus} from 'react-icons/ai';
+import { useSearchParams } from 'next/navigation';
+import { Dialog } from '@headlessui/react';
+import jwt from "jsonwebtoken";
+
 
 interface MediaItem {
   media_url: string;
@@ -226,7 +230,7 @@ function CommentModal({ onClose, postId, postMedia = [],author_name, author_avat
 }
 
 
-export default function SpaceShare() {
+export default function SpaceShare(req: Request) {
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -236,18 +240,20 @@ export default function SpaceShare() {
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [locationName, setLocationName] = useState<string | null>(null);
+  const params = useParams<{ id: string }>();
+  const locationId = params?.id ?? null;
 
 
   const filteredPosts = selectedTag
   ? posts.filter(post => post.tags.includes(selectedTag))
   : posts;
 
-  const params = useParams<{ id: string }>();
   const id = params?.id;  
     useEffect(() => {
       const fetchPostsByLocation = async () => {
         try {
-          const res = await fetch(`/api/posts?location_id=${id}`);
+          const res = await fetch(`/api/posts?location_id=${id} `);
           const data = await res.json();
           setPosts(data);
         } catch (error) {
@@ -259,6 +265,50 @@ export default function SpaceShare() {
         fetchPostsByLocation();
       }
     }, [id]);
+    
+    useEffect(() => {
+      const fetchPosts = async () => {
+        setIsLoading(true);
+        try {
+          // Thêm location_id vào URL nếu có
+          const url = locationId 
+            ? `/api/posts?location_id=${locationId}`
+            : "/api/posts";
+            
+          const res = await fetch(url);
+          
+          if (!res.ok) {
+            throw new Error('Failed to fetch posts');
+          }
+          
+          const data = await res.json();
+          setPosts(data);
+          
+          // Nếu có location_id, lấy thêm thông tin về địa điểm
+          if (locationId) {
+            fetchLocationInfo(locationId);
+          }
+        } catch (error) {
+          console.error("Error fetching posts:", error);
+          setError('Failed to load posts. Please try again.');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+    const fetchLocationInfo = async (locId: string) => {
+      try {
+        const res = await fetch(`/api/locations/${locId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setLocationName(data.name);
+        }
+      } catch (error) {
+        console.error("Error fetching location info:", error);
+      }
+    };
+
+    fetchPosts();
+  }, [locationId]);
 ////////////////// Like
 
   useEffect(() => {
@@ -427,10 +477,20 @@ const toggleLike = async (postId: string) => {
       {/* LEFT COLUMN */}
       <div className="flex-1">
       <h2 className="text-xl text-gray-700 font-semibold border-b pb-2 border-gray-300 mb-6">
-        {selectedTag ? `Tỉnh: ${selectedTag}` : "Tất cả tỉnh"}
+          {locationName ? `Bài viết tại: ${locationName}` : 
+           selectedTag ? `Tỉnh: ${selectedTag}` : "Tất cả tỉnh"}
         <div className="w-25 h-1 bg-purple-500 mt-1 rounded-full" />
       </h2>
-
+      {locationId && (
+          <div className="mb-4 text-sm text-gray-600">
+            <button
+              onClick={() => window.location.href = '/'}
+              className="text-blue-500 underline text-[14px] cursor-pointer"
+            >
+              ← Quay lại
+            </button>
+          </div>
+        )}
         {isLoading ? (
           <div className="text-center py-8">Loading posts...</div>
         ) : error ? (
@@ -588,6 +648,171 @@ const toggleLike = async (postId: string) => {
           author_avatar={selectedPost.author_avatar}
         />
       )}
+      <PostCreationButton />
     </div>
+  );
+}
+function PostCreationButton() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [postContent, setPostContent] = useState("");
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [user, setUser] = useState<{ userId: string | null; userName: string | null }>({
+    userId: null,
+    userName: null,
+  });
+  const params = useParams<{ id: string }>();
+  const locationId = params?.id ?? null;
+
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      try {
+        const decodedToken = jwt.decode(token) as { userId: string; userName: string };
+        setUser({
+          userId: decodedToken.userId,
+          userName: decodedToken.userName,
+        });
+      } catch (error) {
+        console.error("Lỗi giải mã token:", error);
+      }
+    }
+  }, []);
+
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const fileArray = Array.from(files);
+      setImages(fileArray);
+
+      const previews = fileArray.map((file) => URL.createObjectURL(file));
+      setImagePreviews(previews);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    const newPreviews = [...imagePreviews];
+    const newFiles = [...images];
+    newPreviews.splice(index, 1);
+    newFiles.splice(index, 1);
+    setImagePreviews(newPreviews);
+    setImages(newFiles);
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+
+    if (!user.userId) {
+      alert("Bạn cần đăng nhập để tạo bài viết!");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("title", "Bài viết mới"); // Có thể cập nhật thêm field title nếu muốn
+    formData.append("content", postContent);
+    formData.append("author_id", user.userId);
+    if (locationId) {
+      formData.append("location", locationId); // ✅ Chỉ chuỗi, không stringify object
+    }
+    formData.append("tags", ""); // Có thể thêm tags nếu muốn
+    images.forEach((img) => formData.append("image", img));
+
+    const res = await fetch("/api/posts", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      console.log("Bài viết đã được đăng:", data);
+      setPostContent("");
+      setImages([]);
+      setImagePreviews([]);
+      setIsOpen(false);
+    } else {
+      console.error("Lỗi khi đăng bài viết");
+    }
+  };
+
+  return (
+    <>
+      <button
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center shadow-xl z-50"
+      >
+        <AiOutlinePlus className="w-7 h-7" />
+      </button>
+
+      <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="bg-white w-full max-w-md rounded-xl shadow-lg p-4">
+            <div className="flex justify-between items-center mb-4">
+              <Dialog.Title className="text-xl font-semibold">Tạo bài viết</Dialog.Title>
+              <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-gray-800 text-xl">
+                &times;
+              </button>
+            </div>
+            <textarea
+              value={postContent}
+              onChange={(e) => setPostContent(e.target.value)}
+              placeholder="Đừng ngại chia sẻ khoảnh khắc du lịch của bạn..."
+              rows={4}
+              className="w-full p-3 border rounded-md text-sm focus:outline-none focus:ring focus:border-blue-300"
+            />
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Hình ảnh</label>
+              <div className="relative inline-block">
+                <label className="cursor-pointer">
+                  <span className="inline-block bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold hover:bg-blue-100">
+                    Chọn tệp
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageChange}
+                    className="absolute left-0 top-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                </label>
+              </div>
+
+              {/* Image previews */}
+              {imagePreviews.length > 0 && (
+                <div className="flex gap-3 overflow-x-auto mt-3">
+                  {imagePreviews.map((src, idx) => (
+                    <div key={idx} className="relative group">
+                      <Image
+                        src={src}
+                        alt={`preview-${idx}`}
+                        width={120}
+                        height={120}
+                        className="rounded-md border object-cover h-28"
+                      />
+                      <button
+                        onClick={() => removeImage(idx)}
+                        className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end mt-4">
+              <button
+                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                onClick={handleSubmit}
+              >
+                Đăng
+              </button>
+            </div>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
+    </>
   );
 }

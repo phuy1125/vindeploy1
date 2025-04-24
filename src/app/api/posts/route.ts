@@ -13,6 +13,19 @@
       bodyParser: false, // Disable Next.js default body parser
     },
   };
+  interface PostFromDB {
+    _id: ObjectId;
+    title: string;
+    content: string;
+    author_id: string;
+    locationRaw: string;
+    timestamp: Date;
+    tags: string[];
+    media: {
+      media_type: string;
+      media_url: string;
+    }[];
+  }
   
 
   export async function POST(req: Request) {
@@ -48,14 +61,13 @@
             const tagsRaw = Array.isArray(fields.tags) ? fields.tags[0] : fields.tags ?? '';
             const author_id = Array.isArray(fields.author_id) ? fields.author_id[0] : fields.author_id ?? '';
             const locationRaw = Array.isArray(fields.location) ? fields.location[0] : fields.location ?? '{}';
-            const location = JSON.parse(locationRaw);
             const tags = tagsRaw.split(',').map((tag) => tag.trim());
-
+            console.log(locationRaw);
             const newPost = {
               title,
               content,
-              author_id,
-              location,
+              author_id: new ObjectId(author_id),
+              locationRaw,
               timestamp: new Date(),
               status: 'active',
               tags,
@@ -127,37 +139,46 @@
     try {
       const client = await clientPromise;
       const db = client.db();
-      const postsCollection = db.collection('posts');
+      const postsCollection = db.collection<PostFromDB>('posts');
       const usersCollection = db.collection('users');
-      
-      // Lấy query parameters
+  
       const { searchParams } = new URL(req.url);
       const locationId = searchParams.get("location_id");
-      
-      // Tạo query dựa trên location_id nếu có
-      let query = {};
+  
+      const query: Partial<Pick<PostFromDB, "locationRaw">> = {};
       if (locationId) {
-        query = { locationRaw: locationId };
+        query.locationRaw = locationId;
       }
-      
-      // Lấy bài post theo query (có thể là tất cả hoặc theo location)
+  
       const posts = await postsCollection.find(query).toArray();
-      
-      // Gắn thêm thông tin tác giả từ bảng users
+  
       const enrichedPosts = await Promise.all(
-        posts.map(async (post: any) => {
-          const user = await usersCollection.findOne({ _id: new ObjectId(post.author_id) });
-          return {
-            ...post,
-            author_name: user?.username || 'Unknown',
-            author_avatar: user?.avatar || '/img/default-avatar.png',
-          };
+        posts.map(async (post: PostFromDB) => {
+          try {
+            const author = await usersCollection.findOne({ _id: new ObjectId(post.author_id) });
+  
+            return {
+              ...post,
+              author_name: author?.username || 'Unknown',
+              author_avatar: author?.avatar || '/img/default-avatar.png',
+            };
+          } catch (userError) {
+            console.warn(`Lỗi khi tìm user với ID: ${post.author_id}`, userError);
+            return {
+              ...post,
+              author_name: 'Unknown',
+              author_avatar: '/img/default-avatar.png',
+            };
+          }
         })
       );
-      
+  
       return NextResponse.json(enrichedPosts);
     } catch (error) {
-      console.error('Error fetching posts:', error);
-      return NextResponse.json({ message: 'Failed to fetch posts' }, { status: 500 });
+      console.error('❌ Error fetching posts:', error);
+      return NextResponse.json(
+        { message: 'Failed to fetch posts', error: error instanceof Error ? error.message : error },
+        { status: 500 }
+      );
     }
   }

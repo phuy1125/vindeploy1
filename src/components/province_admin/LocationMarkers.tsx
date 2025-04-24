@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import L from 'leaflet';
 import { point } from '@turf/turf'; 
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
+import { useRouter } from "next/navigation";
 interface Location {
+  _id: string;
   name: string;
   description?: string;
   coordinates: {
@@ -43,7 +45,7 @@ interface LocationMarkersProps {
 const LocationMarkers = ({ provinceGid, map, shouldClear, geojsonLayer, onLocationAdded,locationsVersionDeleted  }: LocationMarkersProps) => {
   const [markers, setMarkers] = useState<L.Marker[]>([]);
   const [popupVisible, setPopupVisible] = useState(false);
-
+  const router = useRouter();
   const checkLocationInDatabase = async (lat: number, lng: number, gid: number) => {
     try {
       const res = await fetch(`/api/locations?gid=${gid}`);
@@ -194,8 +196,20 @@ const LocationMarkers = ({ provinceGid, map, shouldClear, geojsonLayer, onLocati
             { icon: pulseIcon }
           )
             .addTo(map)
-            .bindPopup(`<strong>${loc.name}</strong><br/>${loc.description || ''}`);
-
+            .bindPopup(`<strong>${loc.name}</strong><br/>${loc.description || ''}
+              <button class="view-posts-btn" data-location-id="${loc._id}">Xem bài viết</button>
+            `);
+            marker.on('popupopen', () => {
+              setTimeout(() => {
+                const btn = document.querySelector('.view-posts-btn');
+                if (btn) {
+                  btn.addEventListener('click', (e) => {
+                    const locationId = (e.target as HTMLElement).getAttribute('data-location-id');
+                    router.push(`/spaceshare?location_id=${locationId}`);
+                  });
+                }
+              }, 100);
+            });
           return marker;
         });
 
@@ -212,7 +226,7 @@ const LocationMarkers = ({ provinceGid, map, shouldClear, geojsonLayer, onLocati
       markers.forEach(marker => map.removeLayer(marker));
       setMarkers([]);
     };
-  }, [provinceGid, map, locationsVersionDeleted]);
+  }, [provinceGid, map, locationsVersionDeleted, router]);
 
   useEffect(() => {
     if (shouldClear && markers.length > 0) {
