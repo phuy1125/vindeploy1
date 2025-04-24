@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AiOutlineHeart, AiOutlineComment, AiFillHeart } from 'react-icons/ai';
 
 interface MediaItem {
@@ -15,7 +15,14 @@ interface Comment {
   avatar: string;
   text: string;
   timestamp: string;
-  replies: Comment[];
+}
+
+interface CommentModalProps {
+  onClose: () => void;
+  postId: string;
+  postMedia?: MediaItem[];
+  author_name: string;
+  author_avatar: string;
 }
 
 interface Post {
@@ -32,119 +39,62 @@ interface Post {
   usersLiked?: string[];
 }
 
-function CommentModal({ onClose, postId, postMedia = [] }: { onClose: () => void; postId: string; postMedia?: MediaItem[] }) {
-  const [replyTo, setReplyTo] = useState<string>('');
-  const [comment, setComment] = useState<string>('');
-  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+function CommentModal({ onClose, postId, postMedia = [],author_name, author_avatar }: CommentModalProps) {
+  const [comment, setComment] = useState('');
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Default media if none is provided
   const media = postMedia.length > 0 ? postMedia : [{ media_url: '/img/placeholder.png' }];
 
   // Fetch comments from the database
-  useEffect(() => {
-    const fetchComments = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch(`/api/comments?postId=${postId}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch comments');
-        }
-
-        const data = await response.json();
-        if (Array.isArray(data)) {
-          setComments(data);  // Assume the response returns an array of comments
-        } else {
-          throw new Error('Invalid comment data structure');
-        }
-      } catch (error) {
-        console.error('Error fetching comments:', error);
-        setError('Failed to load comments. Please try again.');
-      } finally {
-        setIsLoading(false);
+  const fetchComments = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/comments?postId=${postId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch comments');
       }
-    };
-
-    fetchComments();
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setComments(data);
+      } else {
+        throw new Error('Invalid comment data structure');
+      }
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      setError('Failed to load comments. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   }, [postId]);
 
-  const handleReply = (username: string) => {
-    setReplyTo(username);
-  };
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
 
-  // const handleSubmit = async () => {
-  //   if (!comment.trim()) return;
-
-  //   // Create new comment data
-  //   const newCommentData = {
-  //     postId,
-  //     text: comment,
-  //     parentId: replyTo ? comments.find(c => c.username === replyTo)?._id : null,
-  //   };
-
-  //   try {
-  //     // Send the comment to the API
-  //     const response = await fetch('/api/comments', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify(newCommentData),
-  //     });
-
-  //     if (!response.ok) {
-  //       throw new Error('Failed to post comment');
-  //     }
-
-  //     // Get the newly created comment from the response
-  //     const newComment = await response.json();
-
-  //     // Update the comments state based on whether it's a reply or a new comment
-  //     if (replyTo) {
-  //       setComments(prevComments => 
-  //         prevComments.map(cmnt => {
-  //           if (cmnt.username === replyTo) {
-  //             return {
-  //               ...cmnt,
-  //               replies: [...cmnt.replies, newComment]
-  //             };
-  //           }
-  //           return cmnt;
-  //         })
-  //       );
-  //     } else {
-  //       setComments(prevComments => [...prevComments, newComment]);
-  //     }
-
-  //     // Reset input fields
-  //     setComment('');
-  //     setReplyTo('');
-  //   } catch (error) {
-  //     console.error('Error posting comment:', error);
-  //     // You might want to show an error message to the user here
-  //   }
-  // };
-
-  const inputDisplayValue = replyTo ? `Replying to @${replyTo}: ${comment}` : comment;
-
-  const handleCommentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value;
-    const replyPrefix = `Replying to @${replyTo}: `;
-    
-    if (replyTo) {
-      if (inputValue.length < replyPrefix.length) {
-        setReplyTo('');
-        setComment(inputValue);
-      } else if (inputValue.startsWith(replyPrefix)) {
-        setComment(inputValue.substring(replyPrefix.length));
-      } else {
-        setComment(inputValue);
-      }
-    } else {
-      setComment(inputValue);
+  // Handle submitting a comment
+  const handleSubmit = async () => {
+    if (!comment.trim()) return;
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      setError('Bạn cần đăng nhập để bình luận.');
+      return;
+    }
+    try {
+      const response = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId, text: comment, userId }),
+      });
+      if (!response.ok) throw new Error('Failed to post comment');
+      setComment('');
+      fetchComments();
+    } catch (error) {
+      console.error('Error posting comment:', error);
+      setError('Không thể gửi bình luận.');
     }
   };
 
@@ -153,7 +103,6 @@ function CommentModal({ onClose, postId, postMedia = [] }: { onClose: () => void
     const now = new Date();
     const commentDate = new Date(timestamp);
     const diffInSeconds = Math.floor((now.getTime() - commentDate.getTime()) / 1000);
-    
     if (diffInSeconds < 60) return `${diffInSeconds}s`;
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
@@ -164,166 +113,116 @@ function CommentModal({ onClose, postId, postMedia = [] }: { onClose: () => void
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center min-h-screen">
-      <div className="bg-white text-black w-full max-w-4xl h-auto rounded-lg flex overflow-hidden relative">
-        {/* Left - Images Section */}
-        <div className="w-1/2 bg-black flex items-center justify-center overflow-hidden rounded-l-lg relative">
-          {/* Main displayed image */}
-          <div className="w-full h-[600px] relative">
-            <Image
-              src={media[currentImageIndex].media_url}
-              alt="post"
-              layout="fill"
-              objectFit="cover"
-              className="rounded-l-lg"
-            />
-          </div>
-          
-          {/* Navigation controls - only show if there are multiple images */}
-          {media.length > 1 && (
-            <>
-              {/* Left arrow */}
-              <button 
-                onClick={() => setCurrentImageIndex(prevIndex => (prevIndex - 1 + media.length) % media.length)}
-                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
-              >
-                &#10094;
-              </button>
-              
-              {/* Right arrow */}
-              <button 
-                onClick={() => setCurrentImageIndex(prevIndex => (prevIndex + 1) % media.length)}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
-              >
-                &#10095;
-              </button>
-              
-              {/* Image thumbnails/indicators */}
-              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1">
-                {media.map((_, idx) => (
-                  <div 
-                    key={idx}
-                    onClick={() => setCurrentImageIndex(idx)}
-                    className={`w-2 h-2 rounded-full cursor-pointer ${idx === currentImageIndex ? 'bg-white' : 'bg-white/50'}`}
-                  />
-                ))}
+    <div className="bg-white text-black w-full max-w-4xl h-auto rounded-lg flex overflow-hidden relative">
+      {/* Left - Images Section */}
+      <div className="w-1/2 bg-black flex items-center justify-center overflow-hidden rounded-l-lg relative">
+        <div className="w-full h-[600px] relative">
+          <Image
+            src={media[currentImageIndex].media_url}
+            alt="post"
+            layout="fill"
+            objectFit="cover"
+            className="rounded-l-lg"
+          />
+        </div>
+        {media.length > 1 && (
+          <>
+            <button 
+              onClick={() => setCurrentImageIndex(prevIndex => (prevIndex - 1 + media.length) % media.length)}
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
+            >
+              &#10094;
+            </button>
+            <button 
+              onClick={() => setCurrentImageIndex(prevIndex => (prevIndex + 1) % media.length)}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
+            >
+              &#10095;
+            </button>
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1">
+              {media.map((_, idx) => (
+                <div 
+                  key={idx}
+                  onClick={() => setCurrentImageIndex(idx)}
+                  className={`w-2 h-2 rounded-full cursor-pointer ${idx === currentImageIndex ? 'bg-white' : 'bg-white/50'}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+  
+      {/* Right - Comments */}
+      <div className="w-1/2 p-4 flex flex-col h-[600px]">
+        {/* Header */}
+        <div className="flex items-center gap-2 border-b border-gray-700 pb-2 relative">
+          <Image src={author_avatar} alt="avatar" width={32} height={32} className="rounded-full" />
+          <p className="font-semibold">{author_name}</p>
+          <button 
+            onClick={onClose} 
+            className="absolute top-2 right-2 text-black/50 hover:text-indigo-700 cursor-pointer font-bold">
+            ✕
+          </button>
+        </div>
+  
+        {/* Comments */}
+        <div className="flex-1 overflow-y-auto py-4 space-y-4 text-sm">
+          {isLoading ? (
+            <p className="text-center py-4">Loading comments...</p>
+          ) : error ? (
+            <p className="text-center py-4 text-red-500">{error}</p>
+          ) : comments.length === 0 ? (
+            <p className="text-center py-4 text-gray-500">No comments yet. Be the first to comment!</p>
+          ) : (
+            comments.map((commentItem) => (
+              <div key={commentItem._id} className="flex items-start gap-3">
+                <Image
+                  src={commentItem.avatar}
+                  alt={commentItem.username}
+                  width={32}
+                  height={32}
+                  className="rounded-full"
+                />
+                <div>
+                  <p className="text-gray-800">
+                    <span className="font-bold">{commentItem.username}</span> {commentItem.text}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {formatTimeAgo(commentItem.timestamp)}
+                  </p>
+                </div>
               </div>
-            </>
+            ))
           )}
         </div>
-
-        {/* Right - Comments */}
-        <div className="w-1/2 p-4 flex flex-col">
-          {/* Header */}
-          <div className="flex items-center gap-2 border-b border-gray-700 pb-2 relative">
-              <Image src="/img/man.png" alt="avatar" width={32} height={32} className="rounded-full" />
-              <p className="font-semibold">gin.agg</p>
-
-              {/* Close button at the top-right */}
-              <button 
-                  onClick={onClose} 
-                  className="absolute top-2 right-2 text-black/50 hover:text-indigo-700 cursor-pointer font-bold">
-                  ✕
-              </button>
-          </div>
-          
-          {/* Comments */}
-          <div className="flex-1 overflow-y-auto py-4 space-y-4 text-sm max-h-[400px]">
-            {isLoading ? (
-              <p className="text-center py-4">Loading comments...</p>
-            ) : error ? (
-              <p className="text-center py-4 text-red-500">{error}</p>
-            ) : comments.length === 0 ? (
-              <p className="text-center py-4 text-gray-500">No comments yet. Be the first to comment!</p>
-            ) : (
-              comments.map((commentItem) => (
-                <div key={commentItem._id} className="space-y-2">
-                  <div className="flex items-start gap-3">
-                    <Image
-                      src={commentItem.avatar || "/img/man.png"}
-                      alt={"hello"}
-                      width={32}
-                      height={32}
-                      className="rounded-full"
-                    />
-                    <div>
-                      <p className="text-gray-800">
-                        <span className="font-bold">{commentItem.username|| "hello"}</span> {commentItem.text || "Heloooooooo"}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {formatTimeAgo(commentItem.timestamp)} ·
-                        <button
-                          className="text-blue-500 cursor-pointer ml-1"
-                          onClick={() => handleReply(commentItem.username)}>
-                          Reply
-                        </button>
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Replies for this comment */}
-                  {commentItem.replies && commentItem.replies.length > 0 && (
-                    <div className="pl-10 space-y-2">
-                      {commentItem.replies.map((reply) => (
-                        <div key={reply._id} className="flex items-start gap-3">
-                          <Image
-                            src={reply.avatar}
-                            alt={reply.username}
-                            width={28}
-                            height={28}
-                            className="rounded-full"
-                          />
-                          <div>
-                            <p>
-                              <span className="font-bold">{reply.username}</span>{' '}
-                              <span className="text-blue-500">@{commentItem.username}</span>{' '}
-                              {reply.text}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              {formatTimeAgo(reply.timestamp)} ·
-                              <button
-                                className="text-blue-500 cursor-pointer ml-1"
-                                onClick={() => handleReply(reply.username)}>
-                                Reply
-                              </button>
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="border-t border-gray-700 pt-3 mt-auto">
-            <div className="flex items-center justify-between mb-1">
-              <AiOutlineHeart className="text-xl" />
-              <p className="text-xs text-gray-400">March 11, 2024</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                placeholder="Add a comment..."
-                value={inputDisplayValue}
-                onChange={handleCommentChange}
-                className="flex-1 bg-transparent border-none outline-none text-sm text-black placeholder-gray-400"
-              />
-
-              <button
-                className="text-sm text-blue-500 font-semibold"
-                // onClick={handleSubmit}
-              >
-                Post
-              </button>
-            </div>
+  
+        {/* Footer */}
+        <div className="border-t border-gray-700 pt-3 mt-auto">
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Add a comment..."
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              className="flex-1 bg-transparent border-none outline-none text-sm text-black placeholder-gray-400"
+              onKeyDown={e => { if (e.key === 'Enter') handleSubmit(); }}
+            />
+            <button
+              className="text-sm text-blue-500 font-semibold"
+              onClick={handleSubmit}
+              disabled={!comment.trim()}
+            >
+              Post
+            </button>
           </div>
         </div>
       </div>
     </div>
+  </div>
+  
   );
 }
+
 
 export default function SpaceShare() {
   const [showCommentModal, setShowCommentModal] = useState(false);
@@ -331,19 +230,16 @@ export default function SpaceShare() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+  const [currentImageIndices, setCurrentImageIndices] = useState<Record<string, number>>({});
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Lấy thông tin người dùng từ sessionStorage hoặc localStorage
-    const userId = localStorage.getItem("userId"); // Giả sử bạn đã lưu userId ở đây khi người dùng đăng nhập
 
-    if (userId) {
-      setCurrentUserId(userId);
-    }
-  }, []);
-  
+  const filteredPosts = selectedTag
+  ? posts.filter(post => post.tags.includes(selectedTag))
+  : posts;
+
   // Fetch posts from the database
   useEffect(() => {
     const fetchPosts = async () => {
@@ -368,7 +264,16 @@ export default function SpaceShare() {
     fetchPosts();
   }, []);
 
+////////////////// Like
 
+  useEffect(() => {
+    // Lấy thông tin người dùng từ sessionStorage hoặc localStorage
+    const userId = localStorage.getItem("userId"); // Giả sử bạn đã lưu userId ở đây khi người dùng đăng nhập
+
+    if (userId) {
+      setCurrentUserId(userId);
+    }
+  }, []);
 
   useEffect(() => {
     // Lấy likedPosts từ localStorage
@@ -380,8 +285,6 @@ export default function SpaceShare() {
   }, []);
   
 
-
-  // Toggle like for a post
 // Toggle like for a post
 const toggleLike = async (postId: string) => {
   // Optimistically update UI
@@ -463,7 +366,7 @@ const toggleLike = async (postId: string) => {
   }
 };
 
-
+/////////////////////// Like
   // Format the post date
   const formatPostDate = (timestamp: string) => {
     const now = new Date();
@@ -479,18 +382,44 @@ const toggleLike = async (postId: string) => {
     return `${days} ngày, ${hours} giờ trước`;
   };
 
-  // Navigation functions for post images
-  const nextImage = (postIndex: number) => {
-    if (posts[postIndex] && posts[postIndex].media.length > 1) {
-      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % posts[postIndex].media.length);
-    }
-  };
 
-  const prevImage = (postIndex: number) => {
-    if (posts[postIndex] && posts[postIndex].media.length > 1) {
-      setCurrentImageIndex((prevIndex) => (prevIndex - 1 + posts[postIndex].media.length) % posts[postIndex].media.length);
+
+  useEffect(() => {
+    if (posts.length > 0) {
+      const initialIndices: Record<string, number> = {};
+      posts.forEach(post => {
+        initialIndices[post._id] = 0; // Đặt index mặc định là 0 cho mỗi post
+      });
+      setCurrentImageIndices(initialIndices);
+    }
+  }, [posts]);
+
+
+  // Navigation functions for post images
+  const nextImage = (postId: string, postIndex: number) => {
+    const post = posts[postIndex];
+    if (post && post.media.length > 1) {
+      setCurrentImageIndices((prevIndices) => {
+        const currentIndex = prevIndices[postId] !== undefined ? prevIndices[postId] : 0;
+        const newIndices = { ...prevIndices };
+        newIndices[postId] = (currentIndex + 1) % post.media.length;
+        return newIndices;
+      });
     }
   };
+  
+  const prevImage = (postId: string, postIndex: number) => {
+    const post = posts[postIndex];
+    if (post && post.media.length > 1) {
+      setCurrentImageIndices((prevIndices) => {
+        const currentIndex = prevIndices[postId] !== undefined ? prevIndices[postId] : 0;
+        const newIndices = { ...prevIndices };
+        newIndices[postId] = (currentIndex - 1 + post.media.length) % post.media.length;
+        return newIndices;
+      });
+    }
+  };
+  
 
   // Open comment modal for a specific post
   const openCommentModal = (post: Post) => {
@@ -502,10 +431,10 @@ const toggleLike = async (postId: string) => {
     <div className="flex flex-col md:flex-row px-4 md:px-16 py-8 gap-8">
       {/* LEFT COLUMN */}
       <div className="flex-1">
-        <h2 className="text-xl text-gray-700 font-semibold border-b pb-2 border-gray-300 mb-6">
-          Tất cả tỉnh
-          <div className="w-16 h-1 bg-purple-500 mt-1 rounded-full" />
-        </h2>
+      <h2 className="text-xl text-gray-700 font-semibold border-b pb-2 border-gray-300 mb-6">
+        {selectedTag ? `Tỉnh: ${selectedTag}` : "Tất cả tỉnh"}
+        <div className="w-25 h-1 bg-purple-500 mt-1 rounded-full" />
+      </h2>
 
         {isLoading ? (
           <div className="text-center py-8">Loading posts...</div>
@@ -514,7 +443,19 @@ const toggleLike = async (postId: string) => {
         ) : posts.length === 0 ? (
           <div className="text-center py-8 text-gray-500">No posts available</div>
         ) : (
-          posts.map((post, index) => (
+          <>
+            {selectedTag && (
+                  <div className="mb-4 text-sm text-gray-600">
+                    Đang lọc theo tag: <strong className="text-purple-600">#{selectedTag}</strong>
+                    <button
+                      onClick={() => setSelectedTag(null)}
+                      className="ml-2 text-blue-500 underline text-[14px] cursor-pointer"
+                    >
+                      Xoá lọc
+                    </button>
+                  </div>
+                )}
+          {filteredPosts.map((post, index) => (
             <div key={post._id} className="mb-12">
               {/* User Info */}
               <div className="flex items-center gap-3 mb-2">
@@ -541,7 +482,7 @@ const toggleLike = async (postId: string) => {
                   {/* Main displayed image */}
                   <div className="w-[600px] h-full relative">
                     <Image
-                      src={post.media[currentImageIndex]?.media_url || "/img/placeholder.png"}
+                      src={post.media[currentImageIndices[post._id] || 0]?.media_url || "/img/placeholder.png"}
                       alt={`Image of post by ${post.author_name}`}
                       layout="fill"
                       objectFit="cover"
@@ -554,7 +495,7 @@ const toggleLike = async (postId: string) => {
                     <>
                       {/* Left arrow */}
                       <button
-                        onClick={() => prevImage(index)}
+                        onClick={() => prevImage(post._id, index)}
                         className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
                       >
                         &#10094;
@@ -562,22 +503,28 @@ const toggleLike = async (postId: string) => {
 
                       {/* Right arrow */}
                       <button
-                        onClick={() => nextImage(index)}
+                        onClick={() => nextImage(post._id, index)}
                         className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
                       >
                         &#10095;
                       </button>
 
                       {/* Image thumbnails/indicators */}
-                      <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1">
-                        {post.media.map((_, idx) => (
-                          <div
-                            key={idx}
-                            onClick={() => setCurrentImageIndex(idx)}
-                            className={`w-2 h-2 rounded-full cursor-pointer ${idx === currentImageIndex ? 'bg-white' : 'bg-white/50'}`}
-                          />
-                        ))}
-                      </div>
+                        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1">
+                          {post.media.map((_, idx) => (
+                            <div
+                              key={idx}
+                              onClick={() => {
+                                setCurrentImageIndices((prevIndices) => {
+                                  const newIndices = { ...prevIndices };
+                                  newIndices[post._id] = idx; // Set the index for this specific post
+                                  return newIndices;
+                                });
+                              }}
+                              className={`w-2 h-2 rounded-full cursor-pointer ${idx === currentImageIndices[post._id] ? 'bg-white' : 'bg-white/50'}`}
+                            />
+                          ))}
+                        </div>
                     </>
                   )}
                 </div>
@@ -605,7 +552,8 @@ const toggleLike = async (postId: string) => {
                 </div>
               </div>
             </div>
-          ))
+          ))}
+          </>  
         )}
       </div>
 
@@ -619,21 +567,19 @@ const toggleLike = async (postId: string) => {
 
           {/* List tags */}
           <ul className="space-y-3 text-gray-800 max-h-[500px] overflow-y-auto">
-            {/* This would ideally be populated from your database */}
-            <li className="flex justify-between bg-purple-400 text-sm rounded-full px-4 py-1">
-              <span># Bắc Ninh</span><span className="bg-white rounded-full px-2">3</span>
-            </li>
-            <li className="flex justify-between bg-purple-400 text-sm rounded-full px-4 py-1">
-              <span># Hưng Yên</span><span className="bg-white rounded-full px-2">7</span>
-            </li>
-            <li className="flex justify-between bg-purple-400 text-sm rounded-full px-4 py-1">
-              <span># Thái Nguyên</span><span className="bg-white rounded-full px-2">4</span>
-            </li>
-            <li className="flex justify-between bg-purple-400 text-sm rounded-full px-4 py-1">
-              <span># Đắk Lắk</span><span className="bg-white rounded-full px-2">10</span>
-            </li>
-            {/* Add more tags as needed */}
-          </ul>
+              {["Bắc Ninh", "Hưng Yên", "Thái Nguyên", "Đắk Lắk"].map((tag) => (
+                <li
+                  key={tag}
+                  className={`flex justify-between bg-purple-400 text-sm rounded-full px-4 py-1 cursor-pointer hover:bg-purple-600 ${
+                    selectedTag === tag ? "ring-2 ring-white" : ""
+                  }`}
+                  onClick={() => setSelectedTag(tag === selectedTag ? null : tag)} // toggle tag
+                >
+                  <span>#{tag}</span>
+                  {/* Bạn có thể tính số bài viết theo tag tại đây nếu muốn */}
+                </li>
+              ))}
+            </ul>
         </div>
       </div>
 
@@ -643,6 +589,8 @@ const toggleLike = async (postId: string) => {
           onClose={() => setShowCommentModal(false)} 
           postId={selectedPost._id}
           postMedia={selectedPost.media} 
+          author_name={selectedPost.author_name}
+          author_avatar={selectedPost.author_avatar}
         />
       )}
     </div>
