@@ -10,13 +10,7 @@ export interface AuthRequest extends NextRequest {
 export async function authMiddleware(req: NextRequest) {
   try {
     // Đường dẫn không cần xác thực
-    const publicPaths = [
-      "/api/auth/login", 
-      "/api/auth/register", 
-      "/login", "/register", "/",
-      "/admin/locations", 
-      "/admin-login"
-    ];
+    const publicPaths = ["/api/auth/login", "/api/auth/register", "/login", "/register", "/","/admin/locations"];
     const path = req.nextUrl.pathname;
     
     // Nếu là đường dẫn public thì cho đi tiếp
@@ -24,26 +18,9 @@ export async function authMiddleware(req: NextRequest) {
       return NextResponse.next();
     }
     
-    
-    // 👉 Nếu đường dẫn là /admin thì kiểm tra token admin riêng biệt
-    if (path.startsWith("/admin")) {
-      const adminToken = req.cookies.get("admin_auth_token")?.value;
-      console.log("[middleware] admin_auth_token:", adminToken);
-      if (!adminToken) {
-        return NextResponse.redirect(new URL("/admin-login", req.url));
-      }
-
-      try {
-        const adminSecret = new TextEncoder().encode(process.env.JWT_SECRET);
-        await jwtVerify(adminToken, adminSecret); // Nếu không throw là hợp lệ
-        return NextResponse.next();
-      } catch (err) {
-        return NextResponse.redirect(new URL("/admin-login", req.url));
-      }
-    }
-
     // Lấy token từ cookie
     const token = req.cookies.get("auth_token")?.value;
+    
     if (!token) {
       // Nếu là API request, trả về lỗi 401
       if (path.startsWith("/api/")) {
@@ -75,19 +52,16 @@ export async function authMiddleware(req: NextRequest) {
   } catch (error) {
     // Nếu token không hợp lệ hoặc hết hạn
     const path = req.nextUrl.pathname;
-    if (path.startsWith("/admin")) {
-      return NextResponse.redirect(new URL("/admin-login", req.url));
-    }
     
     // Nếu là API request, trả về lỗi 401
     if (path.startsWith("/api/")) {
       return new NextResponse(
         JSON.stringify({ message: "Token không hợp lệ hoặc đã hết hạn" }),
-        { status: 401, headers: { "content-type": "application/json" }   }
+        { status: 401, headers: { "content-type": "application/json" } }
       );
     }
     
-    // Nếu là page request, chuyển hướng về tra ng login
+    // Nếu là page request, chuyển hướng về trang login
     return NextResponse.redirect(new URL("/login", req.url));
   }
 }

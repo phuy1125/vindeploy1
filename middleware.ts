@@ -6,8 +6,6 @@ export default authMiddleware;
 export const config = {
   matcher: [
 	"/share-space",
-  "/admin",
-  "/admin/:path*",
     // "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };
