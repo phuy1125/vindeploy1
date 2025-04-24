@@ -1,6 +1,7 @@
-// src/app/(main)/layout.tsx
 
+// src/app/(main)/layout.tsx
 'use client';
+
 
 import { ReactNode, useState } from "react";
 import "../globals.css";
@@ -12,6 +13,7 @@ import UserProfile from "@components/chat/UserProfile"; // Dùng useAuth từ co
 type Props = {
   children: ReactNode;
 };
+
 
 export default function MainLayout({ children }: Props) {
   const [active, setActive] = useState("home");
@@ -55,10 +57,8 @@ export default function MainLayout({ children }: Props) {
             </div>
           </nav>
         </header>
-
         {/* Main content */}
         <main>{children}</main>
-
         {/* Footer */}
         <footer className="bg-gray-800 text-white py-8 border-t border-blue-600/20 shadow-[0_-4px_6px_rgba(96,165,250,0.2)]">
           <div className="max-w-screen-xl mx-auto px-4 sm:px-6">
@@ -80,7 +80,6 @@ export default function MainLayout({ children }: Props) {
                   </a>
                 </div>
               </div>
-
               <div className="col-span-3">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-10">
                   <div>
@@ -107,9 +106,7 @@ export default function MainLayout({ children }: Props) {
               </div>
             </div>
           </div>
-
           <hr className="h-px bg-gray-600 border-0 mx-auto w-[90%] mt-7" />
-
           <div className="bg-white-700 pt-4">
             <div className="max-w-7xl mx-auto grid grid-cols-2 gap-4 px-4 text-center">
               <div className="text-left flex items-center">
