@@ -10,7 +10,7 @@ interface Attraction {
   title: string;
   description: string;
   image: string;
-  tags: string[];
+  //tags: string[];
   slug: string;  // Thêm trường slug
 }
 
@@ -107,7 +107,7 @@ export default function ProvincePage() {
                   {attraction.title}
                 </h3>
                 <p className="text-sm text-gray-600 mb-2 flex-1">{attraction.description}</p>
-                <div className="flex flex-wrap gap-2 mt-auto">
+                {/* <div className="flex flex-wrap gap-2 mt-auto">
                   {attraction.tags.map((tag) => (
                     <span
                       key={tag}
@@ -116,7 +116,7 @@ export default function ProvincePage() {
                       {tag}
                     </span>
                   ))}
-                </div>
+                </div> */}
               </div>
             </Link>
           </div>

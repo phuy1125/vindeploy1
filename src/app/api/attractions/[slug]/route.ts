@@ -57,17 +57,18 @@ export async function GET(
           }
         },
         {
-          id: "visit",
-          label: "Tham quan",
+          id: "streetview",
+          label: "Street View & 360°",
           content: {
-            title: "Thông tin tham quan",
-            description: "Thông tin hữu ích khi tham quan địa điểm này:",
+            title: "Khám phá 360°",
+            description: "Trải nghiệm địa điểm này qua góc nhìn 360° và Street View:",
             items: [
-              "Mở cửa: 6:00 - 22:00 hàng ngày",
-              "Giá vé: Miễn phí",
-              "Thời gian tham quan lý tưởng: 1-2 giờ",
-              "Nên đi vào buổi sáng sớm hoặc chiều tối"
-            ]
+              "Xem toàn cảnh địa điểm từ mọi góc độ",
+              "Khám phá chi tiết kiến trúc và cảnh quan",
+              "Trải nghiệm như đang thực tế tại địa điểm"
+            ],
+            streetViewUrl: attraction.streetViewUrls || [],
+            panoramaUrl: "/img/test.png"
           }
         }
       ]

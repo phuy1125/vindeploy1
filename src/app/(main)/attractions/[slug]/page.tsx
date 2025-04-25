@@ -13,6 +13,8 @@ interface Tab {
     description: string;
     image?: string;
     items?: string[];
+    streetViewUrl?: string[];
+    panoramaUrl?: string;
   };
 }
 
@@ -21,7 +23,7 @@ interface Attraction {
   title: string;
   description: string;
   image: string;
-  tags: string[];
+  //tags: string[];
   slug: string;
   tabs: Tab[];
 }
@@ -36,6 +38,7 @@ export default function AttractionDetailPage() {
   useEffect(() => {
     const fetchAttractionData = async () => {
       try {
+
         const slug = params?.slug;
         if (!slug) return;
 
@@ -99,7 +102,7 @@ export default function AttractionDetailPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/60 to-black/90">
           <div className="container mx-auto h-full px-4 flex flex-col justify-end pb-16">
             <div className="max-w-3xl">
-              <div className="flex flex-wrap gap-2 mb-3">
+              {/* <div className="flex flex-wrap gap-2 mb-3">
                 {attraction.tags.map((tag) => (
                   <span
                     key={tag}
@@ -108,7 +111,7 @@ export default function AttractionDetailPage() {
                     {tag}
                   </span>
                 ))}
-              </div>
+              </div> */}
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow">
                 {attraction.title}
               </h1>
@@ -162,6 +165,45 @@ export default function AttractionDetailPage() {
                         />
                       </div>
                     )}
+
+                    {tab.id === "streetview" && (
+                      <div className="space-y-8">
+                        {/* Street View */}
+                        <div className="space-y-4">
+                          <h3 className="text-xl font-semibold text-gray-800">Street View</h3>
+                          {tab.content.streetViewUrl && tab.content.streetViewUrl.length > 0 ? (
+                            tab.content.streetViewUrl.map((url, index) => (
+                              <div key={index} className="w-full h-[400px] rounded-lg overflow-hidden shadow-lg mb-6">
+                                <iframe
+                                  src={url}
+                                  width="100%"
+                                  height="100%"
+                                  style={{ border: 0 }}
+                                  allowFullScreen
+                                  loading="lazy"
+                                  referrerPolicy="no-referrer-when-downgrade"
+                                />
+                              </div>
+                            ))
+                          ) : (
+                            <p>Không có bản đồ street view.</p>
+                          )}
+                        </div>
+
+                        {/* 360° View */}
+                        {/* <div className="space-y-4">
+                          <h3 className="text-xl font-semibold text-gray-800">Khám phá 360°</h3>
+                          <div className="w-full h-[400px] relative rounded-lg overflow-hidden shadow-lg">
+                            <Image
+                              src={tab.content.panoramaUrl || ""}
+                              alt="360° View"
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        </div> */}
+                      </div>
+                    )}
   
                     <p className="text-gray-700 text-base leading-relaxed">
                       {tab.content.description}
@@ -184,5 +226,4 @@ export default function AttractionDetailPage() {
       </div>
     </main>
   );
-  
 }
