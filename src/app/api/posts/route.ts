@@ -19,6 +19,7 @@
     content: string;
     author_id: string;
     locationRaw: string;
+    provinceGid: number | null; 
     timestamp: Date;
     tags: string[];
     media: {
@@ -61,6 +62,10 @@
             const tagsRaw = Array.isArray(fields.tags) ? fields.tags[0] : fields.tags ?? '';
             const author_id = Array.isArray(fields.author_id) ? fields.author_id[0] : fields.author_id ?? '';
             const locationRaw = Array.isArray(fields.location) ? fields.location[0] : fields.location ?? '{}';
+             // Add provinceGid parsing
+            const provinceGidRaw = Array.isArray(fields.provinceGid) ? fields.provinceGid[0] : fields.provinceGid ?? null;
+            // Convert to number or null
+            const provinceGid = provinceGidRaw ? parseInt(provinceGidRaw, 10) : null;
             const tags = tagsRaw.split(',').map((tag) => tag.trim());
             console.log(locationRaw);
             const newPost = {
@@ -68,6 +73,7 @@
               content,
               author_id: new ObjectId(author_id),
               locationRaw,
+              provinceGid,
               timestamp: new Date(),
               status: 'active',
               tags,

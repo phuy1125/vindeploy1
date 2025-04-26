@@ -17,6 +17,8 @@ export const GraphAnnotation = Annotation.Root({
   //Detect intent of the user query
   intent: Annotation<Intent>,
 
+  threadID: Annotation<number>,
+
   //User's favorite travel
   userPreference: Annotation<string>,
 

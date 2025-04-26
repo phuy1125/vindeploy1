@@ -69,7 +69,7 @@ const LocationMarkers = ({
             .bindPopup(`<strong>${loc.name}</strong><br/>${loc.description || ''}`)
             .on('click', () => {
               // Khi click vào marker, điều hướng tới trang bài viết theo location
-              router.push(`/location/post/${loc._id}`);  // Điều hướng đến trang bài viết của location
+              router.push(`/location/post/${loc._id}?provinceGid=${provinceGid}`);  // Điều hướng đến trang bài viết của location
             });
 
 

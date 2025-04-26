@@ -30,9 +30,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     // Get the data from the request body
-    const { name, description, lat, lng, provinceGid } = await req.json();
+    const { lat, lng, provinceGid } = await req.json();
 
-    if (!name || !lat || !lng || !provinceGid) {
+    if (!lat || !lng || !provinceGid) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -42,8 +42,6 @@ export async function POST(req: NextRequest) {
 
     // Create a new location document
     const newLocation = {
-      name,
-      description,
       coordinates: { lat, lng },
       provinceGid,
     };
