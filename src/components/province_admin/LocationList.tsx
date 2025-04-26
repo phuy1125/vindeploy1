@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link"; // Import Link từ Next.js
+import { AiOutlineInfoCircle } from "react-icons/ai";
 
 interface Location {
   _id: string;
@@ -93,7 +94,16 @@ const LocationList = ({ provinceGid, locationsVersion, onLocationDeleted }: Loca
 
   return (
     <div className="absolute top-0 right-0 h-full w-[350px] bg-white/95 shadow-lg overflow-y-auto z-[1001] p-4 border-l border-gray-200">
-      <h2 className="text-xl font-semibold mb-4">Địa điểm trong tỉnh</h2>
+      <div className="flex">      
+        <h2 className="text-xl font-semibold mb-4">Địa điểm</h2>
+        <Link
+          href={`./provinces/${provinceGid}`} // Chuyển đến trang thông tin tỉnh
+          className="text-blue-600 hover:underline flex items-center gap-2 mb-3 ml-16"
+        >
+          <AiOutlineInfoCircle className="text-xl" />
+          Thông tin Province
+        </Link>
+        </div>
 
       {/* Input Search */}
       <input
@@ -123,17 +133,10 @@ const LocationList = ({ provinceGid, locationsVersion, onLocationDeleted }: Loca
 
               {/* Các nút hành động */}
               <div className="mt-3 space-x-2">
-                {/* Xem chi tiết */}
-                <Link
-                  href={`./locations/details/${loc._id}`} // Điều hướng tới trang chi tiết địa điểm
-                  className="text-blue-600 hover:underline"
-                >
-                  Xem chi tiết
-                </Link>
 
                 {/* Sửa địa điểm */}
                 <Link
-                  href={`./locations/update/${loc._id}`} // Điều hướng tới trang chi tiết địa điểm
+                  href={`./locations/new/${loc._id}`} // Điều hướng tới trang chi tiết địa điểm
                   className="text-yellow-600 hover:underline"
                 >
                   Sửa
@@ -146,6 +149,9 @@ const LocationList = ({ provinceGid, locationsVersion, onLocationDeleted }: Loca
                 >
                   Xóa
                 </button>
+
+                {/* Nút Thông tin Province */}
+
               </div>
             </li>
           ))}

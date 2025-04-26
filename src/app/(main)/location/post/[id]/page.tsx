@@ -663,6 +663,9 @@ function PostCreationButton() {
   });
   const params = useParams<{ id: string }>();
   const locationId = params?.id ?? null;
+  // Get provinceGid from the URL
+  const searchParams = useSearchParams();
+  const provinceGid = searchParams ? searchParams.get("provinceGid") : null;
 
   useEffect(() => {
     const token = localStorage.getItem("authToken");
@@ -713,6 +716,9 @@ function PostCreationButton() {
     formData.append("author_id", user.userId);
     if (locationId) {
       formData.append("location", locationId); // ✅ Chỉ chuỗi, không stringify object
+    }
+    if (provinceGid) {
+      formData.append("provinceGid", provinceGid);
     }
     formData.append("tags", ""); // Có thể thêm tags nếu muốn
     images.forEach((img) => formData.append("image", img));
