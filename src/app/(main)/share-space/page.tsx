@@ -252,7 +252,10 @@ export default function SpaceShare() {
         }
         
         const data = await res.json();
-        setPosts(data);
+        
+        // Lọc những bài post có status không phải là "flagged"
+        const filteredPosts = data.filter((post: { status: string }) => post.status !== "flagged");
+        setPosts(filteredPosts);
       } catch (error) {
         console.error("Error fetching posts:", error);
         setError('Failed to load posts. Please try again.');
@@ -260,7 +263,7 @@ export default function SpaceShare() {
         setIsLoading(false);
       }
     };
-
+  
     fetchPosts();
   }, []);
 
