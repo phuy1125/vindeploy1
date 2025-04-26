@@ -56,14 +56,14 @@ const data = {
       icon: IconChartBar,
     },
     {
-      title: "Projects",
-      url: "#",
-      icon: IconFolder,
+      title: "Quản lý người dùng",
+      url: "/admin/user",
+      icon: IconUsers,
     },
     {
       title: "Team",
       url: "#",
-      icon: IconUsers,
+      icon: IconFolder,
     },
   ],
   navClouds: [
