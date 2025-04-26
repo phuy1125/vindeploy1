@@ -63,38 +63,48 @@ const SpaceShare: React.FC = () => {
   // Validate all posts for moderation
   const validateAllPosts = async () => {
     setIsValidating(true);
+  
     try {
+      // Lọc các bài viết không bị flagged (bài viết thường)
+      const postsToValidate = posts.filter(post => post.status !== 'flagged');
+  
+      // Nếu không có bài viết nào cần kiểm duyệt, thoát sớm
+      if (postsToValidate.length === 0) {
+        setError('Không có bài viết thường nào để kiểm duyệt.');
+        setIsValidating(false);
+        return;
+      }
+  
       const res = await fetch('/api/posts/validate-all');
       const data = await res.json();
       
       if (data.success && data.invalidPosts) {
         setValidationResults(data.invalidPosts);
-        
-        // Mark posts as flagged based on validation results
+  
+        // Đánh dấu các bài viết bị vi phạm là flagged
         const flaggedPostIds = data.invalidPosts.map((result: ValidationResult) => result.postId);
-        
-        const newFlaggedPosts = posts.filter(post => 
-          flaggedPostIds.includes(post._id) && !post.flagged
+  
+        const newFlaggedPosts = posts.filter(post =>
+          flaggedPostIds.includes(post._id) && post.status !== 'flagged'
         ).map(post => ({
           ...post,
-          flagged: true,
+          status: 'flagged',
           flaggedReason: data.invalidPosts.find((r: ValidationResult) => r.postId === post._id)?.label || "Inappropriate content",
           flaggedAt: new Date().toISOString()
         }));
-        
-        // Update posts list
+  
         setPosts(posts.map(post => {
-          if (flaggedPostIds.includes(post._id) && !post.flagged) {
+          if (flaggedPostIds.includes(post._id) && post.status !== 'flagged') {
             return {
               ...post,
-              flagged: true,
+              status: 'flagged',
               flaggedReason: data.invalidPosts.find((r: ValidationResult) => r.postId === post._id)?.label || "Inappropriate content",
               flaggedAt: new Date().toISOString()
             };
           }
           return post;
         }));
-        
+  
         setFlaggedPosts(newFlaggedPosts);
         setViewMode("flagged");
       }
@@ -104,53 +114,60 @@ const SpaceShare: React.FC = () => {
       setIsValidating(false);
     }
   };
-
-  // Manually flag a post
-  const flagPost = (postId: string, reason: string = "Manually flagged") => {
-    const flaggedPost = posts.find(post => post._id === postId);
-    if (flaggedPost && !flaggedPost.flagged) {
-      const updatedPost = {
-        ...flaggedPost,
-        flagged: true,
-        flaggedReason: reason,
-        flaggedAt: new Date().toISOString()
-      };
-      
-      setPosts(posts.map(post => post._id === postId ? updatedPost : post));
-      setFlaggedPosts([...flaggedPosts, updatedPost]);
-    }
-  };
-
+  
   // Approve a flagged post (remove flag)
-  const approvePost = (postId: string) => {
+  const approvePost = async (postId: string) => {
+    // Tìm bài viết trong state
     const post = posts.find(post => post._id === postId);
-    if (post && post.flagged) {
-      setPosts(posts.map(p => p._id === postId ? {...p, flagged: false} : p));
-      setFlaggedPosts(flaggedPosts.filter(p => p._id !== postId));
+    
+    if (post) {
+      try {
+        // Cập nhật trạng thái bài viết thành 'active' trong cơ sở dữ liệu
+        const res = await fetch(`/api/posts?postId=${postId}`, {
+          method: 'PATCH', 
+          body: JSON.stringify({ status: 'active' }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+  
+        if (!res.ok) {
+          throw new Error('Failed to approve post');
+        }
+  
+        // Cập nhật bài viết trong state sau khi đã được duyệt
+        // Thay flaggedReason: null thành flaggedReason: undefined
+        setPosts(posts.map(p => p._id === postId ? { ...p, status: 'active', flagged: false, flaggedReason: undefined } : p));
+  
+        // Xóa bài viết khỏi danh sách flaggedPosts
+        setFlaggedPosts(flaggedPosts.filter(p => p._id !== postId));
+      } catch (error) {
+        console.error('Error approving post:', error);
+      }
     }
   };
 
-  // Move post to history (for permanently flagged posts)
-  const moveToHistory = (postId: string) => {
-    const post = posts.find(post => post._id === postId);
-    if (post && post.flagged) {
-      setFlaggedPosts(flaggedPosts.filter(p => p._id !== postId));
-      setFlaggedHistory([...flaggedHistory, post]);
-    }
-  };
-
+  
   // Delete post
   const deletePost = async (postId: string) => {
     try {
-      const response = await fetch(`/api/posts/${postId}`, {
+      const response = await fetch(`/api/posts?postId=${postId}`, {
         method: "DELETE",
       });
       if (response.ok) {
         setPosts(posts.filter(post => post._id !== postId));
         setFlaggedPosts(flaggedPosts.filter(post => post._id !== postId));
-        setFlaggedHistory(flaggedHistory.filter(post => post._id !== postId));
+        // Nếu bạn có state flaggedHistory
+        if (flaggedHistory) {
+          setFlaggedHistory(flaggedHistory.filter(post => post._id !== postId));
+        }
+      } else {
+        // Hiển thị lỗi nếu response không ok
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to delete post');
       }
     } catch (error) {
+      console.error('Error deleting post:', error);
       setError('Failed to delete post. Please try again.');
     }
   };
@@ -202,10 +219,52 @@ const SpaceShare: React.FC = () => {
       case "flagged":
         return flaggedPosts;
       case "history":
-        return flaggedHistory;
-      case "flagged":
+        // Hiển thị các bài viết có status là 'flagged'
+        return posts.filter(post => post.status === 'flagged');
+      case "normal":
       default:
-        return posts.filter(post => !post.flagged);
+        return posts.filter(post => post.status !== 'flagged');
+    }
+  };
+  
+  // Thêm hàm mới để xác nhận tất cả các bài viết bị đánh dấu
+  const approveAllFlaggedPosts = async () => {
+    try {
+      // Bắt đầu hiển thị trạng thái đang xử lý
+      setIsValidating(true);
+      
+      // Không cần gọi API để thay đổi trạng thái, vì chúng ta chỉ
+      // muốn giữ status là "flagged" nhưng chuyển chúng từ danh sách
+      // "cần kiểm duyệt" sang "lịch sử kiểm duyệt"
+      
+      // Thêm ngày xác nhận vào bài viết để theo dõi lịch sử
+      const updatedPosts = posts.map(post => {
+        // Nếu bài viết đang nằm trong danh sách flaggedPosts
+        if (flaggedPosts.some(fp => fp._id === post._id)) {
+          return {
+            ...post,
+            reviewedAt: new Date().toISOString(), // Thêm thời gian xác nhận
+            reviewStatus: 'reviewed' // Thêm trạng thái xác nhận
+          };
+        }
+        return post;
+      });
+      
+      // Cập nhật state post với thông tin mới
+      setPosts(updatedPosts);
+      
+      // Xóa tất cả bài viết khỏi danh sách "cần kiểm duyệt"
+      // Lưu ý: chúng vẫn giữ status là "flagged"
+      setFlaggedPosts([]);
+      
+      // Chuyển sang chế độ xem lịch sử kiểm duyệt
+      setViewMode("history");
+      
+    } catch (error) {
+      console.error('Error confirming all flagged posts:', error);
+      setError('Không thể xác nhận tất cả bài viết. Vui lòng thử lại.');
+    } finally {
+      setIsValidating(false);
     }
   };
 
@@ -225,7 +284,7 @@ const SpaceShare: React.FC = () => {
                   : "bg-gray-200 text-gray-800 hover:bg-gray-300"
               }`}
             >
-              Bài viết thường ({posts.filter(post => !post.flagged).length})
+              Bài viết thường ({posts.filter(post => post.status !== 'flagged').length})
             </button>
             <button 
               onClick={() => setViewMode("flagged")}
@@ -247,19 +306,23 @@ const SpaceShare: React.FC = () => {
               }`}
             >
               <MdHistory />
-              Lịch sử kiểm duyệt ({flaggedHistory.length})
+              Lịch sử kiểm duyệt ({posts.filter(post => post.status === 'flagged').length})
             </button>
+
           </div>
           
           <button 
-            onClick={validateAllPosts}
-            disabled={isValidating}
-            className={`px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 flex items-center gap-1 ${
-              isValidating ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-          >
-            {isValidating ? "Đang kiểm duyệt..." : "Kiểm duyệt tất cả bài viết"}
-          </button>
+              onClick={flaggedPosts.length > 0 ? approveAllFlaggedPosts : validateAllPosts}
+              disabled={isValidating}
+              className={`px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 flex items-center gap-1 ${
+                isValidating ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              {flaggedPosts.length > 0 
+                ? (isValidating ? "Đang xác nhận..." : "Xác nhận tất cả") 
+                : (isValidating ? "Đang kiểm duyệt..." : "Kiểm duyệt tất cả bài viết")}
+            </button>
+
         </div>
       </div>
       
@@ -329,41 +392,25 @@ const SpaceShare: React.FC = () => {
 
                 {/* Action Buttons */}
                 <div className="absolute top-2 right-2 flex gap-2">
-                  {viewMode === "normal" && (
-                    <button
-                      onClick={() => flagPost(post._id)}
-                      className="bg-yellow-500 text-white p-2 rounded-full hover:bg-yellow-600"
-                      title="Flag content"
-                    >
-                      <AiOutlineFlag className="text-lg" />
-                    </button>
-                  )}
+                {(viewMode === "flagged"||viewMode === "history") && (
+                      <>
+                        <button
+                          onClick={() => approvePost(post._id)}
+                          className="bg-green-500 text-white p-2 rounded-full hover:bg-green-600"
+                          title="Bài viết không vi phạm"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                          </svg>
+                        </button>
+                      </>
+                    )}
 
-                  {viewMode === "flagged" && (
-                    <>
-                      <button
-                        onClick={() => approvePost(post._id)}
-                        className="bg-green-500 text-white p-2 rounded-full hover:bg-green-600"
-                        title="Approve content"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                          <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => moveToHistory(post._id)}
-                        className="bg-yellow-500 text-white p-2 rounded-full hover:bg-yellow-600"
-                        title="Move to history"
-                      >
-                        <MdHistory className="text-lg" />
-                      </button>
-                    </>
-                  )}
 
                   <button
                     onClick={() => deletePost(post._id)}
                     className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600"
-                    title="Delete post"
+                    title="Xóa bài viết"
                   >
                     <AiOutlineDelete className="text-lg" />
                   </button>
