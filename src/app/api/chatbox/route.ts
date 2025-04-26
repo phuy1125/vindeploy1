@@ -1,28 +1,59 @@
-import { graph } from "@/lib/agent/agent"; // Import graph từ agent
 import { NextResponse } from "next/server";
+
+// Lấy assistant_id từ biến môi trường .env
+const assistantId = process.env.ASSISTANT_ID;
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json(); // Lấy dữ liệu JSON từ yêu cầu
+    // Lấy dữ liệu từ body của yêu cầu
+    const body = await req.json();
+    const { messages, threadId } = body;
 
-    // Kiểm tra nếu không có thông điệp nào trong body
-    if (!body.messages || body.messages.length === 0) {
+    // Kiểm tra nếu thiếu dữ liệu (messages hoặc threadId)
+    if (!messages || !threadId) {
+      console.error("❌ Missing data", { messages, threadId });
       return NextResponse.json(
-        { error: "No messages received" },
+        { error: "Missing messages or threadId" },
         { status: 400 }
       );
     }
 
-    // Gửi các thông điệp vào graph để xử lý và nhận phản hồi
-    const result = await graph.invoke({
-      messages: body.messages, // Truyền các thông điệp nhận được vào graph
+    // Kiểm tra nếu không có assistantId từ .env
+    if (!assistantId) {
+      return NextResponse.json(
+        { error: "Missing assistant_id in environment variables" },
+        { status: 500 }
+      );
+    }
+
+    // Gọi API LangGraph Thread Runs tại endpoint /runs/wait
+    const langGraphApiUrl = `http://localhost:2024/threads/${threadId}/runs/wait`;
+
+    // Gửi yêu cầu POST tới LangGraph
+    const response = await fetch(langGraphApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        assistant_id: assistantId, // Truyền assistant_id từ .env
+        input: { messages: messages }, // Truyền messages từ client
+      }),
     });
 
-    // Trả về kết quả dưới dạng JSON chứa các thông điệp phản hồi
-    return NextResponse.json({ messages: result.messages });
+    // Kiểm tra nếu có lỗi khi gọi LangGraph
+    if (!response.ok) {
+      throw new Error("Error calling LangGraph API");
+    }
+
+    // Lấy kết quả từ LangGraph
+    const data = await response.json();
+
+    // Trả về dữ liệu từ LangGraph cho client
+    return NextResponse.json({ messages: data.messages });
   } catch (err) {
-    // Bắt lỗi và trả về thông báo lỗi cho phía client
-    console.error("❌ Error in route.ts:", err); // Catch unexpected errors
+    // Bắt lỗi nếu có và trả về thông báo lỗi
+    console.error("❌ Error in /api/chatbox:", err);
     return NextResponse.json(
       { error: "Server error when processing chat" },
       { status: 500 }
