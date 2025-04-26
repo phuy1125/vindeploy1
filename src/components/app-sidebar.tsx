@@ -47,7 +47,7 @@ const data = {
     },
     {
       title: "Quản lý địa điểm",
-      url: "#",
+      url: "/admin/locations",
       icon: IconListDetails,
     },
     {
