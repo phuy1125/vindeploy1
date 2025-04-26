@@ -1,49 +1,81 @@
-// page.tsx
 "use client";
 
-import Sidebar from "../../components/sidebar";
+import Sidebar, { SidebarHandle } from "../../components/sidebar";
 import ChatInterface from "../../components/chat/chat-interface";
 import MapSection from "../../components/map-section";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
+  const [threadId, setThreadId] = useState<string | null>(null);
+  const [resetSignal, setResetSignal] = useState(0);
+  const isManualResetRef = useRef(true);
+
+  const sidebarRef = useRef<SidebarHandle>(null);
 
   useEffect(() => {
-    // Check if window is available (client-side)
     if (typeof window !== "undefined") {
-      const handleResize = () => {
-        setIsMobile(window.innerWidth < 1024);
-      };
-
-      // Set initial value
+      const handleResize = () => setIsMobile(window.innerWidth < 1024);
       handleResize();
-
-      // Add event listener
       window.addEventListener("resize", handleResize);
-
-      // Clean up
       return () => window.removeEventListener("resize", handleResize);
     }
   }, []);
 
+  useEffect(() => {
+    const savedThreadId = localStorage.getItem("selectedThreadId");
+    if (savedThreadId) {
+      setThreadId(savedThreadId);
+    }
+  }, []);
+
+  // ✅ Khi người dùng chủ động bấm "Cuộc trò chuyện mới"
+  const handleNewThread = () => {
+    isManualResetRef.current = true; // ✅ đánh dấu thủ công
+    setThreadId(null);
+    setResetSignal((prev) => prev + 1);
+    localStorage.removeItem("selectedThreadId");
+  };
+
+  const handleSelectThread = (selectedThreadId: string) => {
+    setThreadId(selectedThreadId);
+    setResetSignal((prev) => prev + 1);
+    localStorage.setItem("selectedThreadId", selectedThreadId);
+  };
+
   return (
     <div className="flex flex-col lg:flex-row w-full h-[92vh] mt-[14px] p-2 gap-2">
-      {/* Left sidebar - hidden on mobile */}
+      {/* SIDEBAR */}
       <section
         className={`${
           isMobile ? "hidden" : "block"
         } w-full lg:w-[220px] xl:w-[250px] h-[calc(100vh-72px)]`}
       >
-        <Sidebar />
+        <Sidebar
+          ref={sidebarRef}
+          onNewThread={handleNewThread}
+          onSelectThread={handleSelectThread}
+          selectedThreadId={threadId}
+        />
       </section>
 
-      {/* Middle chat section */}
+      {/* CHAT INTERFACE */}
       <section className="flex-1 min-w-0 h-[calc(100vh-72px)]">
-        <ChatInterface />
+        <ChatInterface
+          threadId={threadId}
+          onThreadCreated={(newThreadId: string) => {
+            setThreadId(newThreadId);
+            setResetSignal((prev) => prev + 1);
+            localStorage.setItem("selectedThreadId", newThreadId);
+            isManualResetRef.current = false; // ✅ không phải do người dùng
+          }}
+          resetSignal={resetSignal}
+          sidebarRef={sidebarRef}
+          isManualResetRef={isManualResetRef} // ✅ truyền thêm prop này
+        />
       </section>
 
-      {/* Right map section - can be toggled on mobile */}
+      {/* MAP SECTION */}
       <section className="w-full lg:w-[320px] xl:w-[380px] h-[300px] lg:h-[calc(100vh-72px)] mt-2 lg:mt-0">
         <MapSection />
       </section>

@@ -1,17 +1,31 @@
-// components/chat-interface.tsx
 "use client";
 
 import type React from "react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, RefObject } from "react";
 import { Send, Paperclip, Mic, Menu } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { SidebarHandle } from "../sidebar";
 
 type Message = {
   role: string;
   content: string;
 };
 
-export default function ChatInterface() {
+type Props = {
+  threadId: string | null;
+  onThreadCreated: (id: string) => void;
+  resetSignal: number;
+  sidebarRef: RefObject<SidebarHandle | null>;
+  isManualResetRef: React.MutableRefObject<boolean>;
+};
+
+export default function ChatInterface({
+  threadId,
+  onThreadCreated,
+  resetSignal,
+  sidebarRef,
+  isManualResetRef,
+}: Props) {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>(
     []
   );
@@ -27,8 +41,85 @@ export default function ChatInterface() {
     }
   };
 
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!threadId) return;
+
+      try {
+        const res = await fetch(`/api/chatbox/threads/${threadId}/state`);
+        const data = await res.json();
+
+        const historyMessages = data.messages
+          .filter((msg: any) => {
+            const isHuman = msg.type === "human";
+            const isAiWithStringContent =
+              msg.type === "ai" && typeof msg.content === "string";
+            return isHuman || isAiWithStringContent;
+          })
+          .map((msg: any) => ({
+            role: msg.type === "human" ? "user" : "ai",
+            content: msg.content,
+          }));
+
+        setMessages(historyMessages);
+      } catch (err) {
+        console.error("Lỗi khi load lịch sử thread:", err);
+        setMessages([
+          {
+            role: "ai",
+            content: "Không thể tải lịch sử cuộc trò chuyện.",
+          },
+        ]);
+      }
+    };
+
+    fetchHistory();
+  }, [threadId, resetSignal]);
+
+  useEffect(() => {
+    setInput("");
+
+    if (isManualResetRef.current) {
+      setMessages([]); // ✅ chỉ reset nếu là thủ công
+    }
+  }, [resetSignal]);
+
   const handleSend = async () => {
     if (!input.trim()) return;
+
+    let currentThreadId: string | null = threadId;
+
+    if (!currentThreadId) {
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        alert("Chưa đăng nhập");
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/chatbox/${userId}/threads`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ metadata: { user_id: userId } }),
+        });
+
+        if (!res.ok) {
+          alert("Tạo thread thất bại");
+          return;
+        }
+
+        const data = await res.json();
+        currentThreadId = data.thread.thread_id;
+
+        if (currentThreadId) {
+          onThreadCreated(currentThreadId); // Cập nhật threadId trong page.tsx
+        }
+      } catch (error) {
+        console.error("Error creating thread:", error);
+        alert("Có lỗi khi tạo thread");
+        return;
+      }
+    }
 
     const userMessage = { role: "user", content: input };
     const updatedMessages = [...messages, userMessage];
@@ -36,71 +127,69 @@ export default function ChatInterface() {
     setInput("");
     setIsSending(true);
 
-    try {
-      const formattedMessages = updatedMessages
-        .map((msg) => {
-          if (msg.role === "user") {
-            return {
-              lc: 1,
-              type: "constructor",
-              id: ["langchain_core", "messages", "HumanMessage"],
-              kwargs: { content: msg.content },
-            };
-          } else if (msg.role === "ai") {
-            return {
-              lc: 1,
-              type: "constructor",
-              id: ["langchain_core", "messages", "AIMessage"],
-              kwargs: { content: msg.content },
-            };
-          }
-          return null;
-        })
-        .filter(Boolean);
+    const formattedMessages = [
+      {
+        lc: 1,
+        type: "constructor",
+        id: ["langchain_core", "messages", "HumanMessage"],
+        kwargs: { content: input },
+      },
+    ];
 
+    try {
       const res = await fetch("/api/chatbox", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: formattedMessages,
-          userQuery: input,
+          threadId: currentThreadId,
         }),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error("API response error:", errorData);
-        throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`);
-      }
-
       const data = await res.json();
 
-      if (data.messages && data.messages.length > 0) {
-        const aiMessages = data.messages.filter(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (msg: any) => msg.type === "constructor" && msg.id[2] === "AIMessage"
-        );
+      const aiMessages = data.messages?.map((msg: any) => ({
+        role: msg.type === "human" ? "user" : "ai",
+        content: msg.content,
+      }));
 
-        if (aiMessages.length > 0) {
-          const latestAiMessage = aiMessages[aiMessages.length - 1];
-          const aiContent = latestAiMessage.kwargs.content;
-          setMessages((prev) => [...prev, { role: "ai", content: aiContent }]);
-        } else {
+      const latestAIMessages = aiMessages?.filter(
+        (msg: { role: string }) => msg.role === "ai"
+      );
+
+      if (latestAIMessages?.length > 0) {
+        const lastMessage = messages[messages.length - 1];
+        const isDuplicate =
+          lastMessage?.role === "ai" &&
+          lastMessage.content ===
+            latestAIMessages[latestAIMessages.length - 1].content;
+
+        if (!isDuplicate) {
           setMessages((prev) => [
             ...prev,
-            { role: "ai", content: "Không có phản hồi từ AI." },
+            latestAIMessages[latestAIMessages.length - 1],
           ]);
         }
       } else {
-        throw new Error("No messages received from API.");
+        setMessages((prev) => [
+          ...prev,
+          { role: "ai", content: "Không có phản hồi từ AI." },
+        ]);
+      }
+
+      // ✅ Sau khi gửi và nhận được tin nhắn AI, reload Sidebar
+      if (sidebarRef.current) {
+        sidebarRef.current.reloadThreads();
       }
     } catch (error) {
-      console.error("Error during request:", error);
-      const errorMsg = {
-        role: "ai",
-        content: "Xin lỗi, đã xảy ra lỗi khi xử lý yêu cầu của bạn.",
-      };
-      setMessages((prev) => [...prev, errorMsg]);
+      console.error("Error during chat request:", error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          content: "Xin lỗi, đã xảy ra lỗi khi xử lý yêu cầu của bạn.",
+        },
+      ]);
     } finally {
       setIsSending(false);
     }
@@ -131,7 +220,7 @@ export default function ChatInterface() {
 
   return (
     <div className="flex flex-col h-[98%] bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
-      {/* Header - Updated with teal theme */}
+      {/* Header */}
       <div className="p-4 bg-gradient-to-r from-teal-600 to-teal-500 flex items-center rounded-t-xl">
         <div className="lg:hidden mr-2">
           <button className="w-8 h-8 flex items-center justify-center bg-white/10 backdrop-blur-sm rounded-full text-white">
@@ -160,9 +249,6 @@ export default function ChatInterface() {
           <p className="text-xs text-teal-50 font-sans">
             Hỏi đáp cùng trợ lý du lịch của bạn
           </p>
-        </div>
-        <div className="ml-auto">
-          <div className="w-3 h-3 bg-emerald-400 rounded-full shadow-sm animate-pulse"></div>
         </div>
       </div>
 
@@ -237,35 +323,10 @@ export default function ChatInterface() {
         </div>
       </div>
 
-      {/* Suggestion Chips */}
-      <div
-        className="px-4 py-3 bg-white border-t border-gray-100 flex gap-2 overflow-x-auto"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        <style jsx>{`
-          div::-webkit-scrollbar {
-            display: none;
-          }
-        `}</style>
-        <button className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm rounded-full whitespace-nowrap transition-colors border border-gray-200 shadow-sm">
-          Địa điểm nổi tiếng
-        </button>
-        <button className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm rounded-full whitespace-nowrap transition-colors border border-gray-200 shadow-sm">
-          Du lịch tiết kiệm
-        </button>
-        <button className="px-4 py-2 bg-teal-50 hover:bg-teal-100 text-teal-700 text-sm rounded-full whitespace-nowrap transition-colors border border-teal-200 shadow-sm">
-          Hỏi gì bây giờ?
-        </button>
-      </div>
-
       {/* Input Area */}
       <div className="p-4 bg-white border-t border-gray-100">
         <div className="flex items-center bg-gray-50 rounded-full p-1 shadow-sm border border-gray-200">
-          <button className="p-2 text-gray-400 hover:text-teal-500 rounded-full">
-            <Paperclip size={18} />
-          </button>
           <textarea
-            ref={textAreaRef}
             className="flex-1 px-3 py-2 bg-transparent border-none resize-none text-gray-700 focus:outline-none"
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -273,16 +334,7 @@ export default function ChatInterface() {
             placeholder="Bạn muốn đi đâu hôm nay?"
             rows={1}
             disabled={isSending}
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           />
-          <style jsx>{`
-            textarea::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
-          <button className="p-2 text-gray-400 hover:text-teal-500 rounded-full mr-1">
-            <Mic size={18} />
-          </button>
           <button
             onClick={handleSend}
             disabled={isSending || !input.trim()}
@@ -292,34 +344,37 @@ export default function ChatInterface() {
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }`}
           >
-            {isSending ? (
-              <svg
-                className="animate-spin h-5 w-5"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-            ) : (
-              <Send size={18} />
+            {isSending && (
+              <div className="flex justify-start">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full mr-2 overflow-hidden bg-gradient-to-br from-teal-600 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                  AI
+                </div>
+                <div className="flex items-center gap-2 max-w-[80%] bg-white text-gray-500 text-sm border border-gray-100 shadow-sm px-4 py-2 rounded-2xl font-medium">
+                  <svg
+                    className="animate-spin h-4 w-4 text-teal-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  <span>Đang nhập...</span>
+                </div>
+              </div>
             )}
           </button>
-        </div>
-        <div className="text-xs text-gray-400 mt-1 text-center">
-          Nhấn Enter để gửi • Shift + Enter để xuống dòng
         </div>
       </div>
     </div>

@@ -1,7 +1,13 @@
-'use client';
+"use client";
 
-import { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import jwt from 'jsonwebtoken';
+import {
+  createContext,
+  useState,
+  useContext,
+  ReactNode,
+  useEffect,
+} from "react";
+import jwt from "jsonwebtoken";
 
 interface AuthContextType {
   isLoggedIn: boolean;
@@ -19,7 +25,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userName, setUserName] = useState<string | null>(null);
   // Khôi phục trạng thái khi load lại trang
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem("authToken");
     if (token) {
       try {
         const decoded = jwt.decode(token) as { name: string } | null;
@@ -28,29 +34,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUserName(decoded.name); // Giả sử bạn muốn hiển thị email như tên người dùng
         }
       } catch (error) {
-        console.error('Token decode error:', error);
+        console.error("Token decode error:", error);
         logout();
       }
     }
   }, []);
 
   const login = (token: string) => {
-    localStorage.setItem('authToken', token);
+    localStorage.setItem("authToken", token);
     const decoded = jwt.decode(token) as { name: string } | null;
-        if (decoded && decoded.name) {
-          setIsLoggedIn(true);
-          setUserName(decoded.name); // Giả sử bạn muốn hiển thị email như tên người dùng
-        }
+    if (decoded && decoded.name) {
+      setIsLoggedIn(true);
+      setUserName(decoded.name); // Giả sử bạn muốn hiển thị email như tên người dùng
+    }
   };
 
   const logout = () => {
-    localStorage.removeItem('authToken');
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("userId"); // Xóa userId nếu bạn đã lưu nó trong localStorage
     setIsLoggedIn(false);
     setUserName(null);
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, userEmail, userName, login, logout }}>
+    <AuthContext.Provider
+      value={{ isLoggedIn, userEmail, userName, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -59,7 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
