@@ -8,7 +8,7 @@ import "../globals.css";
 import Link from "next/link";
 import Image from "next/image";
 import { FaFacebookF, FaInstagram, FaLinkedinIn } from 'react-icons/fa';
-import UserProfile from "@components/chat/UserProfile"; // Dùng useAuth từ context gốc đã bọc ở layout.tsx
+import UserProfile from "@components/userprofile/UserProfile"; // Dùng useAuth từ context gốc đã bọc ở layout.tsx
 
 type Props = {
   children: ReactNode;
