@@ -332,31 +332,7 @@ export default function SpaceShare(req: Request) {
 
 // Toggle like for a post
 const toggleLike = async (postId: string) => {
-  // Optimistically update UI
-  setLikedPosts((prev) => {
-    const newLikedPosts = { ...prev, [postId]: !prev[postId] };
-
-    // Save the updated likes status to localStorage
-    localStorage.setItem("likedPosts", JSON.stringify(newLikedPosts));
-
-    return newLikedPosts;
-  });
-
-  // Update the post likes in the local state
-  setPosts((prevPosts) =>
-    prevPosts.map((post) => {
-      if (post._id === postId) {
-        return {
-          ...post,
-          likes: likedPosts[postId] ? post.likes - 1 : post.likes + 1,
-        };
-      }
-      return post;
-    })
-  );
-
   try {
-    // Send request to backend to update like count
     const response = await fetch(`/api/posts/${postId}/like`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -367,47 +343,43 @@ const toggleLike = async (postId: string) => {
       throw new Error("Failed to update like");
     }
 
-    // Process response
     const data = await response.json();
 
-    // Update UI with the result from server
     if (data.success) {
+      setLikedPosts((prev) => ({
+        ...prev,
+        [postId]: data.liked,
+      }));
+
       setPosts((prevPosts) =>
         prevPosts.map((post) => {
           if (post._id === postId) {
+            const updatedUsersLiked = post.usersLiked ? [...post.usersLiked] : [];
+
+            if (data.liked) {
+              // Nếu đã like
+              if (!updatedUsersLiked.includes(currentUserId!)) {
+                updatedUsersLiked.push(currentUserId!);
+              }
+            } else {
+              // Nếu đã unlike
+              const index = updatedUsersLiked.indexOf(currentUserId!);
+              if (index !== -1) {
+                updatedUsersLiked.splice(index, 1);
+              }
+            }
+
             return {
               ...post,
-              likes: data.likesCount,
+              usersLiked: updatedUsersLiked,
             };
           }
           return post;
         })
       );
-
-      setLikedPosts((prev) => ({
-        ...prev,
-        [postId]: data.liked,
-      }));
     }
   } catch (error) {
     console.error("Error updating like:", error);
-    // Revert optimistic update if there was an error
-    setLikedPosts((prev) => ({
-      ...prev,
-      [postId]: !prev[postId],
-    }));
-
-    setPosts((prevPosts) =>
-      prevPosts.map((post) => {
-        if (post._id === postId) {
-          return {
-            ...post,
-            likes: likedPosts[postId] ? post.likes + 1 : post.likes - 1,
-          };
-        }
-        return post;
-      })
-    );
   }
 };
 
@@ -596,7 +568,7 @@ const toggleLike = async (postId: string) => {
                   ) : (
                     <AiOutlineHeart className="text-2xl" />
                   )}
-                  <span>{post.likes}</span>
+                  <span>{post.usersLiked?.length ?? post.likes ?? 0}</span>
               </div>
                 <div
                   onClick={() => openCommentModal(post)}
