@@ -37,7 +37,14 @@ interface Post {
   likes: number;
   comments_count: number;
   usersLiked?: string[];
+  provinceGid: number;
 }
+
+interface Province {
+  _id: number;
+  name: string;
+}
+
 
 function CommentModal({ onClose, postId, postMedia = [],author_name, author_avatar }: CommentModalProps) {
   const [comment, setComment] = useState('');
@@ -234,10 +241,12 @@ export default function SpaceShare() {
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [selectedProvinceId, setSelectedProvinceId] = useState<number | null>(null);
 
 
-  const filteredPosts = selectedTag
-  ? posts.filter(post => post.tags.includes(selectedTag))
+  const filteredPosts = selectedProvinceId
+  ? posts.filter(post => post.provinceGid === selectedProvinceId)
   : posts;
 
   // Fetch posts from the database
@@ -405,14 +414,33 @@ const toggleLike = async (postId: string) => {
     setShowCommentModal(true);
   };
 
+  useEffect(() => {
+    const fetchProvinces = async () => {
+      try {
+        const res = await fetch('/api/provinces');
+        const data = await res.json();
+        if (data.success) {
+          setProvinces(data.provinces);
+        }
+      } catch (error) {
+        console.error('Error fetching provinces:', error);
+      }
+    };
+  
+    fetchProvinces();
+  }, []);
+  
+
   return (
     <div className="flex flex-col md:flex-row px-4 md:px-16 py-8 gap-8">
       {/* LEFT COLUMN */}
       <div className="flex-1">
       <h2 className="text-xl text-gray-700 font-semibold border-b pb-2 border-gray-300 mb-6">
-        {selectedTag ? `Tỉnh: ${selectedTag}` : "Tất cả tỉnh"}
-        <div className="w-25 h-1 bg-purple-500 mt-1 rounded-full" />
-      </h2>
+          {selectedProvinceId
+            ? `Tỉnh: ${provinces.find(p => p._id === selectedProvinceId)?.name || ''}`
+            : "Tất cả tỉnh"}
+          <div className="w-25 h-1 bg-purple-500 mt-1 rounded-full" />
+        </h2>
 
         {isLoading ? (
           <div className="text-center py-8">Loading posts...</div>
@@ -422,17 +450,20 @@ const toggleLike = async (postId: string) => {
           <div className="text-center py-8 text-gray-500">No posts available</div>
         ) : (
           <>
-            {selectedTag && (
-                  <div className="mb-4 text-sm text-gray-600">
-                    Đang lọc theo tag: <strong className="text-purple-600">#{selectedTag}</strong>
-                    <button
-                      onClick={() => setSelectedTag(null)}
-                      className="ml-2 text-blue-500 underline text-[14px] cursor-pointer"
-                    >
-                      Xoá lọc
-                    </button>
-                  </div>
-                )}
+            {selectedProvinceId && (
+              <div className="mb-4 text-sm text-gray-600">
+                Đang lọc theo tỉnh:{" "}
+                <strong className="text-purple-600">
+                  #{provinces.find(p => p._id === selectedProvinceId)?.name || ""}
+                </strong>
+                <button
+                  onClick={() => setSelectedProvinceId(null)}
+                  className="ml-2 text-blue-500 underline text-[14px] cursor-pointer"
+                >
+                  Xoá lọc
+                </button>
+              </div>
+            )}
           {filteredPosts.map((post, index) => (
             <div key={post._id} className="mb-12">
               {/* User Info */}
@@ -540,24 +571,34 @@ const toggleLike = async (postId: string) => {
       {/* RIGHT COLUMN */}
       <div className="w-full md:w-64">
         <div className="bg-purple-100 p-4 rounded-lg">
-          <h3 className="text-lg text-black font-semibold mb-2">Địa điểm</h3>
+        <h2 className="text-xl text-gray-700 font-semibold border-b pb-2 border-gray-300 mb-6">
+          {selectedProvinceId
+            ? `Tỉnh: ${provinces.find(p => p._id === selectedProvinceId)?.name || ''}`
+            : "Tất cả tỉnh"}
+          <div className="w-25 h-1 bg-purple-500 mt-1 rounded-full" />
+        </h2>
+
           <div className="w-12 h-1 bg-purple-500 mb-4 rounded-full" />
 
           {/* List tags */}
           <ul className="space-y-3 text-gray-800 max-h-[500px] overflow-y-auto">
-              {["Bắc Ninh", "Hưng Yên", "Thái Nguyên", "Đắk Lắk"].map((tag) => (
+              {provinces.map((province) => (
                 <li
-                  key={tag}
+                  key={province._id}
                   className={`flex justify-between bg-purple-400 text-sm rounded-full px-4 py-1 cursor-pointer hover:bg-purple-600 ${
-                    selectedTag === tag ? "ring-2 ring-white" : ""
+                    selectedProvinceId === province._id ? "ring-2 ring-white" : ""
                   }`}
-                  onClick={() => setSelectedTag(tag === selectedTag ? null : tag)} // toggle tag
+                  onClick={() =>
+                    setSelectedProvinceId(
+                      selectedProvinceId === province._id ? null : province._id
+                    )
+                  }
                 >
-                  <span>#{tag}</span>
-                  {/* Bạn có thể tính số bài viết theo tag tại đây nếu muốn */}
+                  <span>#{province.name}</span>
                 </li>
               ))}
             </ul>
+
         </div>
       </div>
 
