@@ -1,35 +1,60 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useAuth } from "@context/AuthContext"; // Import useAuth
 import { useRouter } from 'next/navigation';
-import Image from 'next/image'; // Sử dụng Image từ Next.js
+import Image from 'next/image'; // Import Image from Next.js
 
 export default function UserProfile() {
-  const { isLoggedIn, userName, logout } = useAuth();  // Lấy trạng thái đăng nhập từ context
+  const { isLoggedIn, userName, userId, avatar, logout, updateUserName, updateAvatar } = useAuth();  // Get avatar from context
   const router = useRouter();
 
   const handleLogout = () => {
-    logout();  // Gọi hàm logout từ context
-    router.push('/login');  // Chuyển hướng đến trang login sau khi đăng xuất
+    logout();  // Call the logout function from context
+    router.push('/login');  // Redirect to login page after logout
   };
+
+  const handleAvatarClick = () => {
+    if (userId) {
+      router.push(`/user/${userId}`);  // Redirect to user detail page
+    }
+  };
+
+  // Ensure userName is pulled from localStorage if it's not already in the context
+  useEffect(() => {
+    const storedUserName = localStorage.getItem('userName');
+    const storedAvatar = localStorage.getItem('avatar');
+  
+    if (storedUserName && storedUserName !== userName) {
+      updateUserName(storedUserName); // Update username in context if it's different
+    }
+  
+    if (storedAvatar && storedAvatar !== avatar) {
+      updateAvatar(storedAvatar); // Update avatar in context if it's different
+    }
+  }, [userName, avatar, updateUserName, updateAvatar]);
+  
 
   return (
     <div className="flex items-center gap-4">
       {isLoggedIn ? (
         <>
-          <div className="flex items-center">
-            <Image
-              src="/img/avatar-default-svgrepo-com.svg"
-              alt="User Avatar"
-              className="w-10 h-10 rounded-full cursor-pointer"
-              width={40} // Cài đặt width cho Image
-              height={40} // Cài đặt height cho Image
-            />
-            <span className="ml-2">{userName}</span>  {/* Hiển thị tên người dùng */}
+          <div className="flex items-center cursor-pointer" onClick={handleAvatarClick}>
+            <div className="relative">
+              <Image
+                src={avatar || "/img/avatar-default-svgrepo-com.svg"}  // Use avatar from context
+                alt="User Avatar"
+                className="w-10 h-10 rounded-full transition-all duration-200 ease-in-out transform hover:scale-110 hover:border-2 hover:border-blue-500"
+                width={40}  // Set width for Image
+                height={40}  // Set height for Image
+              />
+            </div>
+            <span className="ml-2">{userName}</span>  {/* Display userName */}
           </div>
+          
           <button
             onClick={handleLogout}
-            className="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md"
+            className="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md ml-4"
           >
             Đăng xuất
           </button>
