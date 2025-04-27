@@ -43,17 +43,36 @@ const intentSchema = z.object({
     .describe("The type of intent"),
 });
 
-async function getOrCreateThreadId(
-  state: typeof GraphAnnotation.State
-): Promise<number> {
-  // Check if thread_id already exists in the state
-  if (state.threadID) {
-    return state.threadID;
-  } else {
-    // If not, generate a new thread_id and save it in the state
-    const newThreadId = generateThreadId();
-    return newThreadId;
+function buildContextMessage(messages: any[], limit = 4): string {
+  const filtered = messages.filter(
+    (m) =>
+      m.type === "user" ||
+      m.role === "user" ||
+      m.type === "ai" ||
+      m.role === "assistant"
+  );
+
+  if (filtered.length === 0 && messages.length > 0) {
+    // Nếu filter không có gì, fallback lấy thẳng tin nhắn cuối
+    return messages[messages.length - 1]?.content || "";
   }
+
+  if (filtered.length <= 1) {
+    const lastMessage = filtered[filtered.length - 1];
+    if (!lastMessage) return "";
+    return lastMessage.content;
+  }
+
+  const recentMessages = filtered.slice(-limit);
+
+  const context = recentMessages
+    .map((msg) => {
+      const prefix = msg.type === "user" || msg.role === "user" ? "User" : "AI";
+      return `${prefix}: ${msg.content}`;
+    })
+    .join("\n");
+
+  return context;
 }
 
 async function classifyIntent(
@@ -64,13 +83,25 @@ async function classifyIntent(
     temperature: 0,
   }).withStructuredOutput(intentSchema);
 
-  const lastMessage = state.messages[state.messages.length - 1].content;
+  const contextMessage = buildContextMessage(state.messages);
 
-  const prompt = CLASSIFY_INTENT_PROMPT.replace(
+  if (!contextMessage.trim()) {
+    console.warn("No valid conversation history. Defaulting to 'general'.");
+    return { intent: Intent.General };
+  }
+
+  const lastIntent = state.intent || "general";
+
+  const SystemPrompt = CLASSIFY_INTENT_PROMPT.replace(
     "{user_query}",
-    lastMessage as string
-  );
-  const response = await model.invoke([{ role: "user", content: prompt }]);
+    contextMessage
+  ).replace("{last_intent}", lastIntent);
+
+  const response = await model.invoke([
+    { role: "system", content: SystemPrompt },
+    { role: "user", content: contextMessage },
+  ]);
+
   const classifiedIntent = response.intentType;
 
   console.log(">>> CLASSIFIED_INTENT:", classifiedIntent);
@@ -126,6 +157,8 @@ async function callModel(
     default:
       promptTemplate = SYSTEM_PROMPT_TEMPLATE;
   }
+
+  console.log(">>> SYSTEM_PROMPT:", promptTemplate);
 
   const response = await model.invoke([
     {

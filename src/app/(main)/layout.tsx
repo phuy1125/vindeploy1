@@ -71,22 +71,145 @@ export default function MainLayout({ children }: Props) {
       <main>{children}</main>
       
       {/* Footer */}
-      <footer className="bg-gray-800 text-white py-8 border-t border-blue-600/20 shadow-[0_-4px_6px_rgba(96,165,250,0.2)]">
-        {/* Footer content remains the same */}
-        <div className="max-w-screen-xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-            {/* Rest of your footer content */}
-            {/* ... */}
+{/* Footer */}
+{/* Footer */}
+<footer className="bg-gray-800 text-white py-8 border-t border-blue-600/20 shadow-[0_-4px_6px_rgba(96,165,250,0.2)] mt-2">
+  <div className="max-w-screen-xl mx-auto px-4 sm:px-6">
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+      
+      {/* Logo và mô tả */}
+      <div className="col-span-2">
+        <Image src="/img/Logo_merus.png" alt="Logo" className="w-40 h-auto" width={160} height={30} />
+        <p className="text-sm text-gray-400 text-left mt-4">
+          Website kết hợp du lịch, văn hóa và trí tuệ nhân tạo, mang đến trải nghiệm khám phá Việt Nam thông minh và cá nhân hóa.
+        </p>
+
+        {/* Social Icons */}
+        <div className="flex space-x-4 mt-4">
+          <a href="https://www.facebook.com/anvanket1402" className="text-white text-xl hover:text-blue-500 rounded-full p-2 bg-blue-600">
+            <FaFacebookF />
+          </a>
+          <a href="https://www.instagram.com/vanket_1402/" className="text-white text-xl hover:text-pink-400 rounded-full p-2 bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500">
+            <FaInstagram />
+          </a>
+          <a href="#" className="text-white text-xl hover:text-blue-500 rounded-full p-2 bg-blue-600">
+            <FaLinkedinIn />
+          </a>
+        </div>
+      </div>
+
+      {/* Thông tin liên hệ */}
+      <div className="col-span-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-10">
+          <div>
+            <ul className="space-y-2 text-sm">
+              <li><p className="text-black text-base font-bold">Địa chỉ</p></li>
+              <li><p className="text-gray-500">Hàn Thuyên, Thủ Đức, Hồ Chí Minh</p></li>
+            </ul>
+          </div>
+          <div>
+            <ul className="space-y-2 text-sm">
+              <li><p className="text-black text-base font-bold">Liên hệ</p></li>
+              <li><p className="text-gray-500">+84 377 892 859</p></li>
+              <li><p className="text-gray-500">22520595@gm.uit.edu.vn</p></li>
+            </ul>
+          </div>
+          <div>
+            <ul className="space-y-2 text-sm">
+              <li><p className="text-black text-base font-bold">Thời gian</p></li>
+              <li><p className="text-gray-500">Thứ hai - Thứ bảy</p></li>
+              <li><p className="text-gray-500">9AM - 7PM</p></li>
+            </ul>
           </div>
         </div>
-        <hr className="h-px bg-gray-600 border-0 mx-auto w-[90%] mt-7" />
-        <div className="bg-white-700 pt-4">
-          <div className="max-w-7xl mx-auto grid grid-cols-2 gap-4 px-4 text-center">
-            {/* Rest of your footer content */}
-            {/* ... */}
-          </div>
-        </div>
-      </footer>
+      </div>
+
+    </div>
+  </div>
+
+  {/* Divider */}
+  <hr className="h-px bg-gray-600 border-0 mx-auto w-[90%] mt-7" />
+
+  {/* Bottom Footer */}
+  <div className="bg-white-700 pt-4">
+             <div className="max-w-7xl mx-auto grid grid-cols-2 gap-4 px-4 text-center">
+               <div className="text-left flex items-center">
+                 <p className="text-sm text-gray-500">&copy; 2025 VintelliTour. Tất cả quyền lợi được bảo vệ.</p>
+               </div>
+
+      {/* Công nghệ hỗ trợ */}
+      <div className="flex justify-center items-center">
+                <div className="flex items-center justify-center space-x-12">
+                  <div className="flex items-center justify-center w-12 h-12">
+                    <Image 
+                      src="/img/brand-threejs.svg" 
+                      alt="threejs" 
+                      className="object-contain" 
+                      width={48} 
+                      height={48} 
+                    />
+                  </div>
+                  <div className="flex items-center justify-center w-12 h-12">
+                    <Image 
+                      src="/img/Langchain--Streamline-Simple-Icons.svg" 
+                      alt="langchain" 
+                      className="object-contain" 
+                      width={48} 
+                      height={48} 
+                    />
+                  </div>
+                  <div className="flex items-center justify-center w-12 h-12">
+                    <Image 
+                      src="/img/LangGraph_icon.png" 
+                      alt="langgraph" 
+                      className="object-contain" 
+                      width={48} 
+                      height={48} 
+                    />
+                  </div>
+                  <div className="flex items-center justify-center w-8 h-8">
+                    <Image 
+                      src="/img/leaflet.svg" 
+                      alt="leaflet" 
+                      className="object-contain" 
+                      width={32} 
+                      height={32} 
+                    />
+                  </div>
+                  <div className="flex items-center justify-center w-12 h-12">
+                    <Image 
+                      src="/img/mongodb-original-wordmark.svg" 
+                      alt="mongodb" 
+                      className="object-contain" 
+                      width={48} 
+                      height={48} 
+                    />
+                  </div>
+                  <div className="flex items-center justify-center w-12 h-12">
+                    <Image 
+                      src="/img/nextjs.svg" 
+                      alt="nextjs" 
+                      className="object-contain" 
+                      width={57} 
+                      height={57} 
+                    />
+                  </div>
+                  <div className="flex items-center justify-center w-32 h-12">
+                    <Image 
+                      src="/img/tailwind-css.svg" 
+                      alt="tailwind" 
+                      width={200} 
+                      height={12} 
+                    />
+                  </div>
+                </div>
+              </div>
+ 
+             </div>
+           </div>
+         </footer>
+
+
     </>
   );
 }

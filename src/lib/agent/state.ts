@@ -17,16 +17,7 @@ export const GraphAnnotation = Annotation.Root({
   //Detect intent of the user query
   intent: Annotation<Intent>,
 
-  threadID: Annotation<number>,
-
-  //User's favorite travel
-  userPreference: Annotation<string>,
-
-  //User's travel history
-  tripPlan: Annotation<string>,
-
-  //Check if user is logged in
-  userLogIn: Annotation<boolean>,
+  last_intent: Annotation<Intent>,
 });
 
 export type GraphAnnotationType = typeof GraphAnnotation.State;
