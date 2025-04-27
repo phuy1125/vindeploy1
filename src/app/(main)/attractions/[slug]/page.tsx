@@ -1,5 +1,5 @@
 "use client";
-///bang
+///src\app\(main)\attractions\[slug]\page.tsx
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
@@ -91,7 +91,7 @@ export default function AttractionDetailPage() {
   return (
     <main className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="relative h-[70vh] min-h-[500px] w-full">
+      <div className="relative h-[70vh] min-h-[500px] w-full mt-[-45px]">
         <Image
           src={attraction.image}
           alt={attraction.title}
