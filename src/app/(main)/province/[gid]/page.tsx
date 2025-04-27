@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import Link from "next/link";  // Import Link từ Next.js để điều hướng
+import Link from "next/link";  // Import Link từ Next.js
 
 interface Attraction {
   id: number;

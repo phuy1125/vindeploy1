@@ -9,7 +9,7 @@ export async function GET(
     const client = await clientPromise;
     const db = client.db("Vintellitour");
 
-    // Find the province that contains the attraction with the given slug
+    // Find the province that contains the attraction
     const province = await db.collection("provinces").findOne(
       { "attractions.slug": params.slug },
       {

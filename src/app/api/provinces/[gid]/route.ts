@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { MongoClient } from 'mongodb';
-
+//bang_fix
 const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
 const client = new MongoClient(uri);
 
