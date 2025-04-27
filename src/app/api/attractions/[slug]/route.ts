@@ -2,6 +2,7 @@
 
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
+import { ObjectId } from "mongodb"; // 🔥 Thêm import ObjectId
 
 export async function GET(
   request: Request,
@@ -9,11 +10,11 @@ export async function GET(
 ) {
   try {
     const client = await clientPromise;
-    const db = client.db("Vintellitour");
+    const db = client.db();
 
-    // 🔥 Tìm location theo tags
+    // 🔥 Tìm location theo _id (phải convert ObjectId)
     const location = await db.collection("locations").findOne({
-      tags: params.slug
+      _id: new ObjectId(params.slug)
     });
 
     if (!location) {
@@ -26,8 +27,8 @@ export async function GET(
     // 🔥 Enrich tabs từ dữ liệu location
     const enrichedLocation = {
       ...location,
-      image: location.image?.[0] || "/img/VN.jpg", // Đổi về 1 ảnh đại diện duy nhất cho dễ xài
-      slug: params.slug, // Để frontend có slug
+      image: location.image?.[0] || "/img/VN.jpg", // Lấy ảnh đại diện
+      slug: params.slug, // Trả luôn slug (chính là _id)
       tabs: [
         {
           id: "overview",

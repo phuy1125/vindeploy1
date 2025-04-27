@@ -5,7 +5,8 @@ export async function GET(
   req: Request,
   { params }: { params: { userId: string } }
 ) {
-  const { userId } = params;
+  // Await the params if required
+  const { userId } = await params;  // Await the params object
 
   if (!userId) {
     return NextResponse.json(
