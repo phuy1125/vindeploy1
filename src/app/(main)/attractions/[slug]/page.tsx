@@ -1,7 +1,7 @@
 "use client";
 ///src\app\(main)\attractions\[slug]\page.tsx
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams  } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -30,6 +30,7 @@ interface Attraction {
 
 export default function AttractionDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams(); // 🆕 lấy search params
   const [attraction, setAttraction] = useState<Attraction | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,21 +49,24 @@ export default function AttractionDetailPage() {
         }
         const data = await response.json();
         setAttraction(data);
-        // Set the first tab as active by default
-        if (data.tabs && data.tabs.length > 0) {
-          setActiveTab(data.tabs[0].id);
+          // 🆕 Check query param tab
+          const initialTab = searchParams ? searchParams.get("tab") : null; 
+
+          if (initialTab) {
+            setActiveTab(initialTab);
+          } else if (data.tabs && data.tabs.length > 0) {
+            setActiveTab(data.tabs[0].id); // Mặc định lấy tab đầu tiên nếu không có param
+          }
+        } catch (error) {
+          console.error("Error fetching attraction data:", error);
+          setError("Lỗi khi tải dữ liệu");
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error("Error fetching attraction data:", error);
-        setError("Lỗi khi tải dữ liệu");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAttractionData();
-  }, [params?.slug]);
-
+      };
+  
+      fetchAttractionData();
+    }, [params?.slug, searchParams]); 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
