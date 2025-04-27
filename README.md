@@ -21,23 +21,24 @@ Add the following environment variables:
 MONGODB_URI=mongodb://localhost:27017/Vintellitour
 
 # JWT Secret
-JWT_SECRET="9#Jk32ndLs92sKsd9Afq2wEr_3kQMz7x1!mZg9ZfP48iQXmTk8d_0vWrzYd!HpT12"
+JWT_SECRET={key}
 
 # Public API Keys
-NEXT_PUBLIC_MAPBOX_API_KEY=AIzaSyCTZzKDo5Ak7c6SvJS--9JDjOK5zD6gnLk
-CESIUM_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0YjEwMDg5Ny00MjAwLTRhNGItOWE4YS0yZGQxYWRmYjJmYjYiLCJpZCI6Mjk1MTA0LCJpYXQiOjE3NDQ5NDE1OTN9.TCDhzZdw-Na15UT7S8C_coZr4kAhdld2uEVdvy_aGQ4
+NEXT_PUBLIC_MAPBOX_API_KEY={key}
+CESIUM_API_KEY={key}
 
 # LangGraph AI Agent
-GOOGLE_API_KEY=AIzaSyA6e1-cG-QJPbIguZMYqv4TEKLzXsAEINo
-TAVILY_API_KEY=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
+GOOGLE_API_KEY={key}
+TAVILY_API_KEY={key}
 LANGSMITH_TRACING=true
 LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
-LANGSMITH_API_KEY="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"
+LANGSMITH_API_KEY={key}
 LANGSMITH_PROJECT="VintelliTour"
 ASSISTANT_ID=b9923bec-9652-45b1-a8e2-4cc547b1f03d
 
 # Hugging Face (content moderation)
-HUGGINGFACE_API_KEY=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
+HUGGINGFACE_API_KEY={key}
+
 ```
 
 3. Install dependencies
