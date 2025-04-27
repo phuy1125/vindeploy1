@@ -143,10 +143,10 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
           const address = Array.isArray(fields.address) ? fields.address[0] : fields.address ?? '';
           const openTime = Array.isArray(fields.openTime) ? fields.openTime[0] : fields.openTime ?? '';
           const price = Array.isArray(fields.price) ? fields.price[0] : fields.price ?? '';
-          const nearbyPlacesRaw = Array.isArray(fields.nearbyPlaces) ? fields.nearbyPlaces[0] : fields.nearbyPlaces ?? '[]';
+          const streetViewUrlsRaw = Array.isArray(fields.streetViewUrls) ? fields.streetViewUrls[0] : fields.streetViewUrls ?? '[]';
           const tagsRaw = Array.isArray(fields.tags) ? fields.tags[0] : fields.tags ?? '';
           
-          const nearbyPlaces = typeof nearbyPlacesRaw === 'string' ? JSON.parse(nearbyPlacesRaw) : nearbyPlacesRaw;
+          const streetViewUrls = typeof streetViewUrlsRaw === 'string' ? JSON.parse(streetViewUrlsRaw) : streetViewUrlsRaw;
           const tags = typeof tagsRaw === 'string' ? tagsRaw.split(',').map((tag) => tag.trim()) : tagsRaw;
 
           const updateData: Record<string, any> = {
@@ -156,7 +156,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
             address,
             openTime,
             price,
-            nearbyPlaces,
+            streetViewUrls,
             tags,
           };
 

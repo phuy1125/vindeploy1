@@ -142,9 +142,10 @@ const VietnamMap = () => {
     const initMap = () => {
       const mapInstance = L.map(mapRef.current!).setView([14.0583, 108.2772], 6);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      L.tileLayer('https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=RCfpOibQtfADVJ8TBhgS#0.7/2.63872/-12.32731', {
+        attribution: '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> contributors',
       }).addTo(mapInstance);
+      
 
       setMap(mapInstance);
 

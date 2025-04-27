@@ -69,24 +69,24 @@ const LocationMarkers = ({
           }).addTo(map);
             
           // Khi tạo popupContent
-          const popupContent = `
-          <div style="font-family: Arial, sans-serif; padding: 8px; max-width: 250px;">
-            <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: bold; color: #333;">${loc.name}</h3>
-            ${
-              loc.description
-                ? `<p style="margin: 4px 0 12px 0; font-size: 14px; color: #555;">${loc.description}</p>`
-                : ""
-            }
-            <div style="display: flex; justify-content: center; gap: 8px;">
-              <a href="/attractions/${loc.slug}" style="padding: 6px 12px; background-color: #007bff; color: white; text-decoration: none; border-radius: 6px; font-size: 14px;">
-                Xem bài viết
-              </a>
-              <a href="/location/360/${loc._id}" target="_blank" style="padding: 6px 12px; background-color: #28a745; color: white; text-decoration: none; border-radius: 6px; font-size: 14px;">
-                Ảnh 360
-              </a>
-            </div>
-          </div>
-          `;
+              const popupContent = `
+              <div style="font-family: Arial, sans-serif; padding: 8px; max-width: 250px;">
+                <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: bold; color: #333;">${loc.name}</h3>
+                ${
+                  loc.description
+                    ? `<p style="margin: 4px 0 12px 0; font-size: 14px; color: #555;">${loc.description}</p>`
+                    : ""
+                }
+                <div style="display: flex; justify-content: center; gap: 8px;">
+                  <a href="/location/post/${loc._id}" style="padding: 6px 12px; background-color: #007bff; color: white; text-decoration: none; border-radius: 6px; font-size: 14px;">
+                    Xem bài viết
+                  </a>
+                  <a href="/location/360/${loc._id}" target="_blank" style="padding: 6px 12px; background-color: #28a745; color: white; text-decoration: none; border-radius: 6px; font-size: 14px;">
+                    Ảnh 360
+                  </a>
+                </div>
+              </div>
+              `;
 
           marker.bindPopup(popupContent);
 

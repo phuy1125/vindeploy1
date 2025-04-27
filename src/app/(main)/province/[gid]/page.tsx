@@ -46,7 +46,7 @@ export default function ProvincePage() {
         if (!gid) return;
 
         const [provinceRes, locationsRes] = await Promise.all([
-          fetch(`/api/provinces/${gid}`),
+          fetch(`/api/province_ad/${gid}`),
           fetch(`/api/locations?provinceGid=${gid}`)
         ]);
 

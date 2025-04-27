@@ -7,7 +7,7 @@ const locationSchema = new mongoose.Schema({
   address: String,
   openTime: String,
   price: String,
-  nearbyPlaces: [String],
+  streetViewUrls: [String],
   tags: [String],
 });
 
