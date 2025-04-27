@@ -142,7 +142,7 @@ export default function ProvincePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {locations.map((loc) => (
               <Link 
-                href={`/attractions/${loc.slug}`} 
+                href={`/attractions/${loc._id}`} 
                 key={loc._id}
                 className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col h-full"
               >
