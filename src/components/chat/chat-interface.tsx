@@ -218,6 +218,13 @@ export default function ChatInterface({
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    if (!threadId) {
+      // Nếu không có threadId, reset tin nhắn
+      setMessages([]);
+    }
+  }, [threadId]);
+
   return (
     <div className="flex flex-col h-[98%] bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
       {/* Header */}
