@@ -11,7 +11,7 @@ interface Location {
   address?: string;
   openTime?: string;
   price?: string;
-  nearbyPlaces?: string[];
+  streetViewUrls?: string[];
   tags?: string[];
   image?: string[];
 }
@@ -31,7 +31,7 @@ export default function UpdateLocationPage() {
     address: "",
     openTime: "",
     price: "",
-    nearbyPlaces: [""],
+    streetViewUrls: [""],
     tags: [],
     image: [],
   });
@@ -56,7 +56,7 @@ export default function UpdateLocationPage() {
           address: data.address || "",
           openTime: data.openTime || "",
           price: data.price || "",
-          nearbyPlaces: data.nearbyPlaces || [""],
+          streetViewUrls: data.streetViewUrls || [""],
           tags: data.tags || [],
           image: data.image || [],
         });
@@ -89,13 +89,13 @@ export default function UpdateLocationPage() {
   };
 
   const handleNearbyPlaceChange = (index: number, value: string) => {
-    const newNearby = [...(formData.nearbyPlaces || [])];
+    const newNearby = [...(formData.streetViewUrls || [])];
     newNearby[index] = value;
-    setFormData((prev) => ({ ...prev, nearbyPlaces: newNearby }));
+    setFormData((prev) => ({ ...prev, streetViewUrls: newNearby }));
   };
 
   const addNearbyPlace = () => {
-    setFormData((prev) => ({ ...prev, nearbyPlaces: [...(prev.nearbyPlaces || []), ""] }));
+    setFormData((prev) => ({ ...prev, streetViewUrls: [...(prev.streetViewUrls || []), ""] }));
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,8 +131,8 @@ export default function UpdateLocationPage() {
       formDataToSend.append('openTime', formData.openTime || '');
       formDataToSend.append('price', formData.price || '');
       
-      // Xử lý mảng nearbyPlaces
-      formDataToSend.append('nearbyPlaces', JSON.stringify(formData.nearbyPlaces));
+      // Xử lý mảng streetViewUrls
+      formDataToSend.append('streetViewUrls', JSON.stringify(formData.streetViewUrls));
       
       // Xử lý mảng tags
       if (formData.tags && formData.tags.length > 0) {
@@ -321,18 +321,18 @@ export default function UpdateLocationPage() {
               className="w-full p-2 border rounded h-24 mt-4"
             />
             <div className="mt-4">
-              <h3 className="text-md font-medium mb-2">Địa điểm lân cận</h3>
-              {formData.nearbyPlaces?.map((place, index) => (
+              <h3 className="text-md font-medium mb-2">Đường dẫn 360</h3>
+              {formData.streetViewUrls?.map((place, index) => (
                 <input
                   key={index}
                   value={place}
                   onChange={(e) => handleNearbyPlaceChange(index, e.target.value)}
                   className="w-full p-2 border rounded my-1"
-                  placeholder={`Địa điểm ${index + 1}`}
+                  placeholder={`https://www.google.com/maps... ${index + 1}`}
                 />
               ))}
               <button onClick={addNearbyPlace} className="text-blue-500 text-sm underline mt-2">
-                + Thêm địa điểm
+                + Thêm đường dẫn
               </button>
             </div>
           </div>

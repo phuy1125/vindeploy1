@@ -46,7 +46,7 @@ export default function ProvincePage() {
         if (!gid) return;
 
         const [provinceRes, locationsRes] = await Promise.all([
-          fetch(`/api/provinces/${gid}`),
+          fetch(`/api/province_ad/${gid}`),
           fetch(`/api/locations?provinceGid=${gid}`)
         ]);
 
@@ -98,7 +98,7 @@ export default function ProvincePage() {
             key={loc._id}
             className="bg-white rounded-lg shadow hover:shadow-lg transition-transform hover:scale-[1.02] flex flex-col"
           >
-            <Link href={`/attractions/${loc.slug}`} className="flex flex-col flex-1">
+            <Link href={`/attractions/${loc._id}`} className="flex flex-col flex-1">
               <div className="relative w-full h-48">
                 <Image
                   src={loc.image?.[0] || "/img/VN.jpg"}
