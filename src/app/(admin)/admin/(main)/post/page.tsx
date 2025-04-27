@@ -39,6 +39,7 @@ const SpaceShare: React.FC = () => {
   const [flaggedPosts, setFlaggedPosts] = useState<Post[]>([]);
   const [flaggedHistory, setFlaggedHistory] = useState<Post[]>([]);
   const [isValidating, setIsValidating] = useState<boolean>(false);
+  const [expandedPosts, setExpandedPosts] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -437,7 +438,22 @@ const SpaceShare: React.FC = () => {
                 </div>
 
                 {/* Post Content */}
-                <p className="text-xs text-gray-800 mt-2">{post.content}</p>
+                <div className="mt-2">
+                  <p className={`text-xs text-gray-800 ${expandedPosts[post._id] ? '' : 'line-clamp-3'}`}>
+                    {post.content}
+                  </p>
+
+                  {/* Nếu content dài thì mới show nút Xem thêm */}
+                  {post.content.length > 100 && (
+                    <button
+                      onClick={() => setExpandedPosts(prev => ({ ...prev, [post._id]: !prev[post._id] }))}
+                      className="mt-1 text-blue-500 text-xs underline"
+                    >
+                      {expandedPosts[post._id] ? 'Thu gọn' : 'Xem thêm'}
+                    </button>
+                  )}
+                </div>
+
 
                 {/* Post Status */}
                 <div className="flex items-center justify-between mt-3">

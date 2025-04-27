@@ -332,31 +332,7 @@ export default function SpaceShare(req: Request) {
 
 // Toggle like for a post
 const toggleLike = async (postId: string) => {
-  // Optimistically update UI
-  setLikedPosts((prev) => {
-    const newLikedPosts = { ...prev, [postId]: !prev[postId] };
-
-    // Save the updated likes status to localStorage
-    localStorage.setItem("likedPosts", JSON.stringify(newLikedPosts));
-
-    return newLikedPosts;
-  });
-
-  // Update the post likes in the local state
-  setPosts((prevPosts) =>
-    prevPosts.map((post) => {
-      if (post._id === postId) {
-        return {
-          ...post,
-          likes: likedPosts[postId] ? post.likes - 1 : post.likes + 1,
-        };
-      }
-      return post;
-    })
-  );
-
   try {
-    // Send request to backend to update like count
     const response = await fetch(`/api/posts/${postId}/like`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -367,47 +343,43 @@ const toggleLike = async (postId: string) => {
       throw new Error("Failed to update like");
     }
 
-    // Process response
     const data = await response.json();
 
-    // Update UI with the result from server
     if (data.success) {
+      setLikedPosts((prev) => ({
+        ...prev,
+        [postId]: data.liked,
+      }));
+
       setPosts((prevPosts) =>
         prevPosts.map((post) => {
           if (post._id === postId) {
+            const updatedUsersLiked = post.usersLiked ? [...post.usersLiked] : [];
+
+            if (data.liked) {
+              // Nếu đã like
+              if (!updatedUsersLiked.includes(currentUserId!)) {
+                updatedUsersLiked.push(currentUserId!);
+              }
+            } else {
+              // Nếu đã unlike
+              const index = updatedUsersLiked.indexOf(currentUserId!);
+              if (index !== -1) {
+                updatedUsersLiked.splice(index, 1);
+              }
+            }
+
             return {
               ...post,
-              likes: data.likesCount,
+              usersLiked: updatedUsersLiked,
             };
           }
           return post;
         })
       );
-
-      setLikedPosts((prev) => ({
-        ...prev,
-        [postId]: data.liked,
-      }));
     }
   } catch (error) {
     console.error("Error updating like:", error);
-    // Revert optimistic update if there was an error
-    setLikedPosts((prev) => ({
-      ...prev,
-      [postId]: !prev[postId],
-    }));
-
-    setPosts((prevPosts) =>
-      prevPosts.map((post) => {
-        if (post._id === postId) {
-          return {
-            ...post,
-            likes: likedPosts[postId] ? post.likes + 1 : post.likes - 1,
-          };
-        }
-        return post;
-      })
-    );
   }
 };
 
@@ -596,7 +568,7 @@ const toggleLike = async (postId: string) => {
                   ) : (
                     <AiOutlineHeart className="text-2xl" />
                   )}
-                  <span>{post.likes}</span>
+                  <span>{post.usersLiked?.length ?? post.likes ?? 0}</span>
               </div>
                 <div
                   onClick={() => openCommentModal(post)}
@@ -613,31 +585,6 @@ const toggleLike = async (postId: string) => {
       </div>
 
       <div className="hidden md:block w-px bg-gray-300"></div> 
-
-      {/* RIGHT COLUMN */}
-      <div className="w-full md:w-64">
-        <div className="bg-purple-100 p-4 rounded-lg">
-          <h3 className="text-lg text-black font-semibold mb-2">Địa điểm</h3>
-          <div className="w-12 h-1 bg-purple-500 mb-4 rounded-full" />
-
-          {/* List tags */}
-          <ul className="space-y-3 text-gray-800 max-h-[500px] overflow-y-auto">
-              {["Bắc Ninh", "Hưng Yên", "Thái Nguyên", "Đắk Lắk"].map((tag) => (
-                <li
-                  key={tag}
-                  className={`flex justify-between bg-purple-400 text-sm rounded-full px-4 py-1 cursor-pointer hover:bg-purple-600 ${
-                    selectedTag === tag ? "ring-2 ring-white" : ""
-                  }`}
-                  onClick={() => setSelectedTag(tag === selectedTag ? null : tag)} // toggle tag
-                >
-                  <span>#{tag}</span>
-                  {/* Bạn có thể tính số bài viết theo tag tại đây nếu muốn */}
-                </li>
-              ))}
-            </ul>
-        </div>
-      </div>
-
       {/* Comment Modal */}
       {showCommentModal && selectedPost && (
         <CommentModal 
@@ -735,6 +682,7 @@ function PostCreationButton() {
       setImages([]);
       setImagePreviews([]);
       setIsOpen(false);
+      window.location.reload();
     } else {
       console.error("Lỗi khi đăng bài viết");
     }
