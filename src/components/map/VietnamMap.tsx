@@ -165,13 +165,23 @@
                   };
 
                   const popupContent = `
-                  <h3>${feature.properties.ten_tinh}</h3>
-                  ${
-                    feature.properties.gid
-                      ? `<p><strong>Mã tỉnh:</strong> ${feature.properties.gid}</p>`
-                      : ""
-                  }
-                `;
+                    <div style="font-family: Arial, sans-serif; padding: 8px; max-width: 250px;">
+                      <h3 style="margin: 0 0 8px 0; font-size: 20px; font-weight: bold; color: #333;">${feature.properties.ten_tinh}</h3>
+                      ${
+                        feature.properties.gid
+                          ? `<p style="margin: 4px 0 12px 0; font-size: 14px; color: #555;"><strong>Mã tỉnh:</strong> ${feature.properties.gid}</p>`
+                          : ""
+                      }
+                      <div style="text-align: center;">
+                        <a href="/province/${feature.properties.gid}" target="_blank" style="display: inline-block; padding: 8px 16px; background-color: #28a745; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px;">
+                          Xem thông tin và tham quan
+                        </a>
+                      </div>
+                    </div>
+                  `;
+
+
+
                   layer.bindPopup(popupContent);
 
                   layer.on("click", () =>
@@ -217,18 +227,27 @@
         }
 
         const popupContent = `
-          <h3>${feature.properties.ten_tinh}</h3>
+        <div style="font-family: Arial, sans-serif; padding: 8px; max-width: 250px;">
+          <h3 style="margin: 0 0 8px 0; font-size: 20px; font-weight: bold; color: #333;">${feature.properties.ten_tinh}</h3>
           ${
             feature.properties.gid
-              ? `<p><strong>Mã tỉnh:</strong> ${feature.properties.gid}</p>`
+              ? `<p style="margin: 4px 0 12px 0; font-size: 14px; color: #555;"><strong>Mã tỉnh:</strong> ${feature.properties.gid}</p>`
               : ""
           }
-        `;
+          <div style="text-align: center;">
+            <a href="/province/${feature.properties.gid}" target="_blank" style="display: inline-block; padding: 8px 16px; background-color: #28a745; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px;">
+              Xem thông tin và tham quan
+            </a>
+          </div>
+        </div>
+      `;
         layer.bindPopup(popupContent);
 
         layer.on("click", () =>
           handleProvinceClick(layer, feature, map, geojsonLayer)
         );
+        // 👉👉 Thêm dòng này để đóng popup lại
+    layer.closePopup();
       });
     
       // ✅ Reset state

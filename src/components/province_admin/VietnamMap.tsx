@@ -1,14 +1,18 @@
+"use client";
+// bang_fix
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import '@/lib/plugins/L.Icon.Pulse.js';
 import '@/lib/plugins/L.Icon.Pulse.css';
+import { useRouter } from 'next/navigation';
 
 import { MapFeature, ProvinceProperties, ProvinceStyle } from '@/types/map';
 import LocationMarkers from './LocationMarkers';
 import LocationList from './LocationList';
 
 const VietnamMap = () => {
+  const router = useRouter();
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<L.Map | null>(null);
   const [geojsonLayer, setGeojsonLayer] = useState<L.GeoJSON | null>(null);
@@ -69,6 +73,10 @@ const VietnamMap = () => {
       });
 
       layer.openPopup();
+
+      // if (feature.properties.gid !== undefined) {
+      //   router.push(`/province/${feature.properties.gid}`);
+      // }
     }
   };
 
@@ -160,6 +168,7 @@ const VietnamMap = () => {
               // `;
               // layer.bindPopup(popupContent);
 
+
               layer.on('click', () =>
                 handleProvinceClick(layer, feature, mapInstance, gjLayer)
               );
@@ -219,29 +228,23 @@ const VietnamMap = () => {
   const [locationsDeleted, setLocationsDeleted] = useState<number>(0);
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
-<input
-  type="text"
-  value={searchQuery}
-  onChange={handleSearchChange}
-  placeholder="Tìm kiếm tỉnh"
-  style={{
-    position: 'absolute',
-    top: '60px',
-    left: '20px',
-    zIndex: 1000,
-    padding: '12px 20px', // Tăng kích thước padding cho cảm giác thoải mái hơn
-    fontSize: '16px', // Giữ kích thước chữ dễ đọc
-    borderRadius: '8px', // Bo tròn góc cho mềm mại
-    border: '1px solid #ddd', // Border nhẹ nhàng, dễ chịu
-    backgroundColor: '#f9f9f9', // Màu nền nhẹ nhàng
-    color: '#333', // Màu chữ đậm dễ đọc
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)', // Thêm shadow nhẹ để tạo chiều sâu
-    transition: 'all 0.3s ease', // Thêm hiệu ứng chuyển tiếp khi người dùng focus vào
-  }}
-  onFocus={(e) => e.target.style.boxShadow = '0 4px 12px rgba(0, 112, 255, 0.2)'} // Focus hiệu ứng sáng hơn
-  onBlur={(e) => e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'} // Blur hiệu ứng trở lại
-/>
-
+      <input
+        type="text"
+        value={searchQuery}
+        onChange={handleSearchChange}
+        placeholder="Search for a province"
+        style={{
+          position: 'absolute',
+          top: '60px',
+          left: '20px',
+          zIndex: 1000,
+          padding: '8px 16px',
+          fontSize: '16px',
+          borderRadius: '8px',
+          border: '1px solid #ccc',
+          boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+        }}
+      />
       {suggestions.length > 0 && (
         <ul
           style={{

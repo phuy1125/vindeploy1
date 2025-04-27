@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   createContext,
@@ -44,6 +44,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // ✅ Khôi phục trạng thái khi load lại trang
   useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
     const token = localStorage.getItem('authToken');
     const userId = localStorage.getItem('userId');
 
@@ -56,11 +58,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           fetchLikedPosts(userId); // <-- fetch lại khi reload
         }
       } catch (error) {
-        console.error('Token decode error:', error);
+        console.error("Token decode error:", error);
         logout();
       }
     }
-  }, []);
+  }
+}, []);
 
   // ✅ Hàm login async + await fetch liked
   const login = async (token: string) => {
@@ -121,7 +124,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

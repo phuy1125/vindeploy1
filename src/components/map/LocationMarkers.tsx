@@ -10,11 +10,13 @@ interface Location {
   _id: string;
   name: string;
   description?: string;
+  slug: string; // 🛠 THÊM DÒNG NÀY
   coordinates: {
     lat: number;
     lng: number;
   };
 }
+
 
 interface PulseIconOptions extends L.DivIconOptions {
   heartbeat?: number;
@@ -64,13 +66,38 @@ const LocationMarkers = ({
 
           const marker = L.marker([loc.coordinates.lat, loc.coordinates.lng], {
             icon: pulseIcon,
-          })
-            .addTo(map)
-            .bindPopup(`<strong>${loc.name}</strong><br/>${loc.description || ''}`)
-            .on('click', () => {
-              // Khi click vào marker, điều hướng tới trang bài viết theo location
-              router.push(`/location/post/${loc._id}?provinceGid=${provinceGid}`);  // Điều hướng đến trang bài viết của location
-            });
+          }).addTo(map);
+            
+          // Khi tạo popupContent
+              const popupContent = `
+              <div style="font-family: Arial, sans-serif; padding: 8px; max-width: 250px;">
+                <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: bold; color: #333;">${loc.name}</h3>
+                ${
+                  loc.description
+                    ? `<p style="margin: 4px 0 12px 0; font-size: 14px; color: #555;">${loc.description}</p>`
+                    : ""
+                }
+                <div style="display: flex; justify-content: center; gap: 8px;">
+                  <a href="/attractions/${loc.slug}" style="padding: 6px 12px; background-color: #007bff; color: white; text-decoration: none; border-radius: 6px; font-size: 14px;">
+                    Xem bài viết
+                  </a>
+                  <a href="/location/360/${loc._id}" target="_blank" style="padding: 6px 12px; background-color: #28a745; color: white; text-decoration: none; border-radius: 6px; font-size: 14px;">
+                    Ảnh 360
+                  </a>
+                </div>
+              </div>
+              `;
+
+          marker.bindPopup(popupContent);
+
+          marker.on('popupopen', () => {
+            const button = document.getElementById(`view-post-${loc._id}`);
+            if (button) {
+              button.addEventListener('click', () => {
+                router.push(`/location/post/${loc._id}?provinceGid=${provinceGid}`);
+              });
+            }
+          });
 
 
           return marker;

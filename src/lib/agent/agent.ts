@@ -1,5 +1,5 @@
-import { Intent, GraphAnnotation, GraphAnnotationType } from "./state";
-import { AIMessage, HumanMessage } from "@langchain/core/messages";
+import { Intent, GraphAnnotation } from "./state";
+import { AIMessage } from "@langchain/core/messages";
 
 import { z } from "zod";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
@@ -8,17 +8,25 @@ import {
   START,
   MessagesAnnotation,
   StateGraph,
+  MemorySaver,
 } from "@langchain/langgraph";
 import {
   CLASSIFY_INTENT_PROMPT,
   SYSTEM_PROMPT_TEMPLATE,
-  DATABASE_SYSTEM_PROMPT,
   WEBSITE_INFO_PROMPT,
   SEARCH_SYSTEM_PROMPT,
 } from "./prompt";
 import { TOOLS } from "../agent/tools";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import "dotenv/config";
+
+// MemorySaver instance for saving state
+const memory = new MemorySaver();
+
+// Function to generate a random thread_id between 1 and 100000
+function generateThreadId(): number {
+  return Math.floor(Math.random() * 100000) + 1;
+}
 
 const intentSchema = z.object({
   query: z.string().describe("The user query or input to classify the intent"),
@@ -35,13 +43,26 @@ const intentSchema = z.object({
     .describe("The type of intent"),
 });
 
+async function getOrCreateThreadId(
+  state: typeof GraphAnnotation.State
+): Promise<number> {
+  // Check if thread_id already exists in the state
+  if (state.threadID) {
+    return state.threadID;
+  } else {
+    // If not, generate a new thread_id and save it in the state
+    const newThreadId = generateThreadId();
+    return newThreadId;
+  }
+}
+
 async function classifyIntent(
   state: typeof GraphAnnotation.State
 ): Promise<typeof GraphAnnotation.Update> {
   const model = new ChatGoogleGenerativeAI({
     model: "gemini-2.0-flash",
     temperature: 0,
-  }).withStructuredOutput(intentSchema); // Bind the structured output schema
+  }).withStructuredOutput(intentSchema);
 
   const lastMessage = state.messages[state.messages.length - 1].content;
 
@@ -75,10 +96,10 @@ async function callModel(
   const model = new ChatGoogleGenerativeAI({
     model: "gemini-2.0-flash",
     temperature: 0.7,
-  }).bindTools(TOOLS); // Bind the tools to the model
+  }).bindTools(TOOLS);
 
   let promptTemplate = "";
-  const intent = state.intent; // Get the intent from the state
+  const intent = state.intent;
 
   switch (intent) {
     case "general":
@@ -119,20 +140,7 @@ async function callModel(
   };
 }
 
-// function routeIntent(state: IntentAnnotationType): string {
-//   console.log("Route Intent:", state.intent);
-//   if (state.intent === Intent.Database) {
-//     return "node_a";
-//   }
-//   if (state.intent === Intent.General) {
-//     return "node_b";
-//   }
-//   if (state.intent === Intent.Search) {
-//     return "node_c";
-//   }
-//   return "node_b";
-// }
-
+// Define the workflow with thread_id generation
 const workflow = new StateGraph(GraphAnnotation)
   .addNode("classify_intent", classifyIntent)
   .addNode("callModel", callModel)
@@ -142,4 +150,4 @@ const workflow = new StateGraph(GraphAnnotation)
   .addConditionalEdges("callModel", routeModelOutput)
   .addEdge("tools", "callModel");
 
-export const graph = workflow.compile();
+export const graph = workflow.compile({ checkpointer: memory });
