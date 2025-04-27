@@ -62,7 +62,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logout();
       }
     }
-  }, []);
+  }
+}, []);
 
   // ✅ Hàm login async + await fetch liked
   const login = async (token: string) => {
