@@ -92,7 +92,7 @@ export default function AdminUserPage() {
             <TableHead>Email</TableHead>
             <TableHead>Ngày tạo</TableHead>
             <TableHead>Ngày cập nhật</TableHead>
-            <TableHead>Hành động</TableHead> {/* Thêm cột cho nút hành động */}
+            <TableHead>Hành động</TableHead>  
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -104,7 +104,6 @@ export default function AdminUserPage() {
               <TableCell>{new Date(user.updatedAt).toLocaleDateString('vi-VN')}</TableCell>
               <TableCell>
                 <div className="flex gap-2">
-                  {/* Nút Xóa */}
                   <Button
                     variant="destructive"
                     size="sm"

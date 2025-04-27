@@ -136,14 +136,24 @@ const LocationMarkers = ({ provinceGid, map, shouldClear, geojsonLayer, onLocati
   
       if (!existingLocation) {
         const isConfirmed = window.confirm('Vị trí này chưa có trong cơ sở dữ liệu. Bạn có muốn thêm địa điểm không?');
-            const locationId = await addLocationToDatabase( lat, lng, provinceGid);
-            console.log(locationId);
-            router.push(`/admin/locations/new/${locationId}`);
+      
+        if (isConfirmed) {
+          const locationId = await addLocationToDatabase(lat, lng, provinceGid);
+          console.log(locationId);
+      setPopupVisible(true);
+
+          router.push(`/admin/locations/new/${locationId}`);
+        } else {
+          console.log('Người dùng đã hủy, không thực hiện thêm địa điểm.');
+          // Không làm gì nếu user Cancel
+        }
       } else {
         alert('Vị trí này đã có trong cơ sở dữ liệu.');
-      }
-  
       setPopupVisible(true);
+
+      }
+      
+  
     }
   };
   
