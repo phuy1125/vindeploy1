@@ -83,6 +83,12 @@ const Sidebar = forwardRef<SidebarHandle, SidebarProps>(
             setThreads((prevThreads) =>
               prevThreads.filter((thread) => thread.id !== threadId)
             );
+
+            setChatCount((prevCount) => prevCount - 1);
+
+            if (threadId === selectedThreadId) {
+              onSelectThread(""); // Reset threadId trong ChatInterface
+            }
           } else {
             console.error("Failed to delete thread");
           }
