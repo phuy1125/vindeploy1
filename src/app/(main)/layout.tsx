@@ -31,41 +31,69 @@ export default function MainLayout({ children }: Props) {
     <>
       {/* Header */}
       <header>
-        <nav className="w-full mx-auto relative z-10 flex items-center justify-between bg-white bg-black/80 py-0 text-black border-b border-blue-600/20 shadow-lg shadow-blue-400/20">
-          {/* Nav content remains the same */}
-          <div className="flex-shrink-0 px-4">
-            <Link href="/">
-              <Image
-                src="/img/Logo_merus.png"
-                alt="Logo"
-                className="w-40 ml-15 h-auto cursor-pointer"
-                width={160}
-                height={30}
-              />
-            </Link>
-          </div>
-          <ul className="hidden text-lg md:flex w-1/2 items-center justify-between gap-4 py-2 cursor-pointer md:px-10 border-r-2 border-l-2 border-gray-800 dark:border-gray-300 group">
-            <Link href="/" onClick={() => setActive("home")}>
-              <li className={`rounded-b px-2 ${active === "home" ? "border-b-[3px] border-blue-600 font-bold" : "hover:border-b-[3px] hover:border-blue-600 hover:font-bold group-hover:border-b-0"}`}>
-                Trang chủ
-              </li>
-            </Link>
-            <Link href="/share-space" onClick={() => setActive("share")}>
-              <li className={`rounded-b px-2 ${active === "share" ? "border-b-[3px] border-blue-600 font-bold" : "hover:border-b-[3px] hover:border-blue-600 hover:font-bold group-hover:border-b-0"}`}>
-                Không gian chia sẻ
-              </li>
-            </Link>
-            <Link href="/aboutus" onClick={() => setActive("about")}>
-              <li className={`rounded-b px-2 ${active === "about" ? "border-b-[3px] border-blue-600 font-bold" : "hover:border-b-[3px] hover:border-blue-600 hover:font-bold group-hover:border-b-0"}`}>
-                Về chúng tôi
-              </li>
-            </Link>
-          </ul>
-          <div className="hidden md:flex justify-start pl-2 pr-10 py-1 gap-12">
-            <UserProfile />
-          </div>
-        </nav>
-      </header>
+   <nav className="w-full mx-auto relative z-10 flex items-center justify-between bg-white py-0 text-black border-b border-blue-600/20 shadow-lg shadow-blue-400/20">
+     <div className="flex-shrink-0 px-4">
+       <Link href="/">
+         <Image
+           src="/img/Logo_merus.png"
+           alt="Logo"
+           className="w-40 ml-15 h-auto cursor-pointer"
+           width={160}
+           height={30}
+         />
+       </Link>
+     </div>
+     <ul className="hidden text-lg md:flex w-1/2 items-center justify-between gap-4 py-2 cursor-pointer md:px-10 border-r-2 border-l-2 border-gray-800 dark:border-gray-300">
+       <Link href="/" onClick={() => setActive("home")}>
+         <li className={`relative px-2 py-1 transition-all duration-300 ${
+           active === "home" 
+             ? "text-blue-600 font-semibold" 
+             : "hover:text-blue-600"
+         }`}>
+           Trang chủ
+           <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 transform transition-transform duration-300 ${
+             active === "home" 
+               ? "scale-x-100" 
+               : "scale-x-0 hover:scale-x-100"
+           }`}></span>
+         </li>
+       </Link>
+       
+       <Link href="/share-space" onClick={() => setActive("share")}>
+         <li className={`relative px-2 py-1 transition-all duration-300 ${
+           active === "share" 
+             ? "text-blue-600 font-semibold" 
+             : "hover:text-blue-600"
+         }`}>
+           Không gian chia sẻ
+           <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 transform transition-transform duration-300 ${
+             active === "share" 
+               ? "scale-x-100" 
+               : "scale-x-0 hover:scale-x-100"
+           }`}></span>
+         </li>
+       </Link>
+       
+       <Link href="/aboutus" onClick={() => setActive("about")}>
+         <li className={`relative px-2 py-1 transition-all duration-300 ${
+           active === "about" 
+             ? "text-blue-600 font-semibold" 
+             : "hover:text-blue-600"
+         }`}>
+           Về chúng tôi
+           <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 transform transition-transform duration-300 ${
+             active === "about" 
+               ? "scale-x-100" 
+               : "scale-x-0 hover:scale-x-100"
+           }`}></span>
+         </li>
+       </Link>
+     </ul>
+     <div className="hidden md:flex justify-start pl-2 pr-10 py-1 gap-12">
+       <UserProfile />
+     </div>
+   </nav>
+ </header>
       
       {/* Main content */}
       <main>{children}</main>
