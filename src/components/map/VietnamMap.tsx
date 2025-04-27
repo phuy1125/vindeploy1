@@ -137,11 +137,11 @@
           [14.0583, 108.2772],
           6
         );
-
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        }).addTo(mapInstance);
+      L.tileLayer('https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=RCfpOibQtfADVJ8TBhgS#0.7/2.63872/-12.32731', {
+        attribution: '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> contributors',
+        tileSize: 256,
+        zoomOffset: 0,
+      }).addTo(mapInstance);
 
         setMap(mapInstance);
 
@@ -165,13 +165,23 @@
                   };
 
                   const popupContent = `
-                  <h3>${feature.properties.ten_tinh}</h3>
-                  ${
-                    feature.properties.gid
-                      ? `<p><strong>Mã tỉnh:</strong> ${feature.properties.gid}</p>`
-                      : ""
-                  }
-                `;
+                    <div style="font-family: Arial, sans-serif; padding: 8px; max-width: 250px;">
+                      <h3 style="margin: 0 0 8px 0; font-size: 20px; font-weight: bold; color: #333;">${feature.properties.ten_tinh}</h3>
+                      ${
+                        feature.properties.gid
+                          ? `<p style="margin: 4px 0 12px 0; font-size: 14px; color: #555;"><strong>Mã tỉnh:</strong> ${feature.properties.gid}</p>`
+                          : ""
+                      }
+                      <div style="text-align: center;">
+                        <a href="/province/${feature.properties.gid}" target="_blank" style="display: inline-block; padding: 8px 16px; background-color: #28a745; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px;">
+                          Xem thông tin và tham quan
+                        </a>
+                      </div>
+                    </div>
+                  `;
+
+
+
                   layer.bindPopup(popupContent);
 
                   layer.on("click", () =>
@@ -217,18 +227,27 @@
         }
 
         const popupContent = `
-          <h3>${feature.properties.ten_tinh}</h3>
+        <div style="font-family: Arial, sans-serif; padding: 8px; max-width: 250px;">
+          <h3 style="margin: 0 0 8px 0; font-size: 20px; font-weight: bold; color: #333;">${feature.properties.ten_tinh}</h3>
           ${
             feature.properties.gid
-              ? `<p><strong>Mã tỉnh:</strong> ${feature.properties.gid}</p>`
+              ? `<p style="margin: 4px 0 12px 0; font-size: 14px; color: #555;"><strong>Mã tỉnh:</strong> ${feature.properties.gid}</p>`
               : ""
           }
-        `;
+          <div style="text-align: center;">
+            <a href="/province/${feature.properties.gid}" target="_blank" style="display: inline-block; padding: 8px 16px; background-color: #28a745; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px;">
+              Xem thông tin và tham quan
+            </a>
+          </div>
+        </div>
+      `;
         layer.bindPopup(popupContent);
 
         layer.on("click", () =>
           handleProvinceClick(layer, feature, map, geojsonLayer)
         );
+        // 👉👉 Thêm dòng này để đóng popup lại
+    layer.closePopup();
       });
     
       // ✅ Reset state

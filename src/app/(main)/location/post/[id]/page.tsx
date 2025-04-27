@@ -86,7 +86,7 @@ function CommentModal({ onClose, postId, postMedia = [],author_name, author_avat
     if (!comment.trim()) return;
     const userId = localStorage.getItem('userId');
     if (!userId) {
-      setError('Bạn cần đăng nhập để bình luận.');
+      window.location.href = '/login';
       return;
     }
     try {
@@ -706,7 +706,7 @@ function PostCreationButton() {
     e.preventDefault();
 
     if (!user.userId) {
-      alert("Bạn cần đăng nhập để tạo bài viết!");
+      window.location.href = '/login';
       return;
     }
 

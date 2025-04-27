@@ -17,7 +17,7 @@ export async function GET(req: Request, { params }: { params: { gid: string } })
       // Try to convert gid to a number
       numericGid = parseInt(gid, 10);
       if (!isNaN(numericGid)) {
-        province = await db.collection('provinces').findOne({ _id: numericGid });
+        province = await db.collection('provinces').findOne({ _id: numericGid as any });
       }
     } catch (err) {
       console.log("Error converting ID to number:", err);
@@ -81,10 +81,10 @@ export async function POST(req: Request, { params }: { params: { gid: string } }
     try {
       const numericGid = parseInt(gid, 10);
       if (!isNaN(numericGid)) {
-        province = await db.collection('provinces').findOne({ _id: numericGid });
+        province = await db.collection('provinces').findOne({ _id: numericGid as any});
       }
     } catch (err) {
-      console.log("Error converting ID to number:", err);
+      console.log("Error converting ID to number:", err); 
     }
 
     // If province is not found by numeric ID, return an error
