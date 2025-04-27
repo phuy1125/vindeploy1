@@ -36,7 +36,7 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        assistant_id: assistantId, // Truyền assistant_id từ .env
+        assistant_id: "agent", // Truyền assistant_id từ .env
         input: { messages: messages }, // Truyền messages từ client
       }),
     });
