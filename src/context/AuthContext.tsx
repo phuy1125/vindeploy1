@@ -50,26 +50,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // ✅ Khôi phục trạng thái khi load lại trang
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    if (token) {
     const token = localStorage.getItem('authToken');
     const storedUserId = localStorage.getItem('userId');
   
     if (token && storedUserId) {
       async function fetchUserInfo() {
         try {
-          const decoded = jwt.decode(token!) as { name: string } | null; // <- thêm !
+          const decoded = jwt.decode(token!) as { name: string } | null;
           if (decoded) {
-            const res = await fetch(`/api/users/${storedUserId!}`); // <- thêm !
+            const res = await fetch(`/api/users/${storedUserId}`);
             const data = await res.json();
-    
+  
             if (res.ok) {
               setIsLoggedIn(true);
               setUserName(data.username);
               setAvatar(data.avatar);
               setUserId(storedUserId);
               fetchLikedPosts(storedUserId!);
-    
+  
               localStorage.setItem('userName', data.username);
               localStorage.setItem('avatar', data.avatar || '');
             } else {
@@ -84,11 +82,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           logout();
         }
       }
-    
+  
       fetchUserInfo();
-    }    
+    }
   }, []);
-
+  
   // ✅ Hàm login async + await fetch liked
   const login = async (token: string) => {
     localStorage.setItem('authToken', token);
