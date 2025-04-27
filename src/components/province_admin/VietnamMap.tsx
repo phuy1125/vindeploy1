@@ -74,9 +74,9 @@ const VietnamMap = () => {
 
       layer.openPopup();
 
-      if (feature.properties.gid !== undefined) {
-        router.push(`/province/${feature.properties.gid}`);
-      }
+      // if (feature.properties.gid !== undefined) {
+      //   router.push(`/province/${feature.properties.gid}`);
+      // }
     }
   };
 

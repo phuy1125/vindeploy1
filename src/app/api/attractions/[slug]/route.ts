@@ -1,3 +1,5 @@
+// src/app/api/attractions/[slug]/route.ts
+
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 
@@ -9,37 +11,31 @@ export async function GET(
     const client = await clientPromise;
     const db = client.db("Vintellitour");
 
-    // Find the province that contains the attraction
-    const province = await db.collection("provinces").findOne(
-      { "attractions.slug": params.slug },
-      {
-        projection: {
-          "attractions.$": 1
-        }
-      }
-    );
+    // 🔥 Tìm location theo tags
+    const location = await db.collection("locations").findOne({
+      tags: params.slug
+    });
 
-    if (!province || !province.attractions || !province.attractions[0]) {
+    if (!location) {
       return NextResponse.json(
-        { error: "Attraction not found" },
+        { error: "Location not found" },
         { status: 404 }
       );
     }
 
-    // Get the matched attraction
-    const attraction = province.attractions[0];
-
-    // Add tabs data based on the attraction
-    const enrichedAttraction = {
-      ...attraction,
+    // 🔥 Enrich tabs từ dữ liệu location
+    const enrichedLocation = {
+      ...location,
+      image: location.image?.[0] || "/img/VN.jpg", // Đổi về 1 ảnh đại diện duy nhất cho dễ xài
+      slug: params.slug, // Để frontend có slug
       tabs: [
         {
           id: "overview",
           label: "Tổng quan",
           content: {
             title: "Giới thiệu",
-            description: attraction.description,
-            image: attraction.image || "/img/VN.jpg"
+            description: location.description || "Đang cập nhật mô tả địa điểm.",
+            image: location.image?.[0] || "/img/VN.jpg"
           }
         },
         {
@@ -47,13 +43,13 @@ export async function GET(
           label: "Lịch sử",
           content: {
             title: "Lịch sử phát triển",
-            description: "Địa điểm này có một lịch sử phát triển lâu đời, gắn liền với sự phát triển của Thủ đô Hà Nội.",
+            description: location.description_history || "Chưa có thông tin lịch sử.",
             items: [
-              "Được xây dựng từ thời kỳ lịch sử",
-              "Trải qua nhiều giai đoạn phát triển",
-              "Là chứng nhân của nhiều sự kiện lịch sử quan trọng"
+              "Gắn liền với lịch sử phát triển địa phương",
+              "Điểm đến mang đậm dấu ấn văn hóa",
+              "Địa danh nổi bật khu vực"
             ],
-            image: "/img/VN.jpg"
+            image: location.image?.[0] || "/img/VN.jpg"
           }
         },
         {
@@ -61,20 +57,16 @@ export async function GET(
           label: "Street View & 360°",
           content: {
             title: "Khám phá 360°",
-            description: "Trải nghiệm địa điểm này qua góc nhìn 360° và Street View:",
-            items: [
-              "Xem toàn cảnh địa điểm từ mọi góc độ",
-              "Khám phá chi tiết kiến trúc và cảnh quan",
-              "Trải nghiệm như đang thực tế tại địa điểm"
-            ],
-            streetViewUrl: attraction.streetViewUrls || [],
-            panoramaUrl: "/img/test.png"
+            description: "Trải nghiệm toàn cảnh 360° sống động.",
+            streetViewUrl: location.streetViewUrls || [],
+            panoramaUrl: location.image?.[0] || "/img/test.png"
           }
         }
       ]
     };
 
-    return NextResponse.json(enrichedAttraction);
+    return NextResponse.json(enrichedLocation);
+
   } catch (error) {
     console.error("Database error:", error);
     return NextResponse.json(

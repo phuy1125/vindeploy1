@@ -1,8 +1,24 @@
+// src\app\api\provinces\[gid]\route.ts
+
+
 import { NextResponse } from 'next/server';
-import { MongoClient } from 'mongodb';
-//bang_fix
-const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
-const client = new MongoClient(uri);
+import clientPromise from '@/lib/mongodb';
+
+
+
+interface Province {
+    _id: number; // 👈 _id kiểu number (khác với mặc định ObjectId)
+    name: string;
+    description: string;
+    cuisine: {
+      title: string;
+      description: string;
+    };
+    culture: {
+      title: string;
+      description: string;
+    };
+  }
 
 export async function GET(request: Request) {
   try {
@@ -12,24 +28,15 @@ export async function GET(request: Request) {
 
     console.log('Received gid:', gid);
 
-    await client.connect();
-    const database = client.db('Vintellitour');
-    const provinces = database.collection('provinces');
-
-    // Option 1: Test cả kiểu string và number
     const numericGid = parseInt(gid);
-    const query = isNaN(numericGid)
-      ? { id_map: gid } // gid là string
-      : {
-          $or: [
-            { id_map: numericGid }, // nếu là number
-            { id_map: gid },        // nếu lưu là string
-          ]
-        };
 
-    console.log('Query condition:', query);
+    const client = await clientPromise;
+    const db = client.db('Vintellitour');
+    const provinces = db.collection<Province>('provinces'); 
+    // 👆 khai báo rõ collection có kiểu Province, tránh lỗi type
 
-    const province = await provinces.findOne(query);
+    const province = await provinces.findOne({ _id: numericGid });
+
     console.log('Result from DB:', province);
 
     if (!province) {
@@ -46,7 +53,5 @@ export async function GET(request: Request) {
       { error: 'Internal server error' },
       { status: 500 }
     );
-  } finally {
-    await client.close();
   }
 }
