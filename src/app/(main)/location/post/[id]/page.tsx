@@ -735,6 +735,7 @@ function PostCreationButton() {
       setImages([]);
       setImagePreviews([]);
       setIsOpen(false);
+      window.location.reload();
     } else {
       console.error("Lỗi khi đăng bài viết");
     }
