@@ -585,31 +585,6 @@ const toggleLike = async (postId: string) => {
       </div>
 
       <div className="hidden md:block w-px bg-gray-300"></div> 
-
-      {/* RIGHT COLUMN */}
-      <div className="w-full md:w-64">
-        <div className="bg-purple-100 p-4 rounded-lg">
-          <h3 className="text-lg text-black font-semibold mb-2">Địa điểm</h3>
-          <div className="w-12 h-1 bg-purple-500 mb-4 rounded-full" />
-
-          {/* List tags */}
-          <ul className="space-y-3 text-gray-800 max-h-[500px] overflow-y-auto">
-              {["Bắc Ninh", "Hưng Yên", "Thái Nguyên", "Đắk Lắk"].map((tag) => (
-                <li
-                  key={tag}
-                  className={`flex justify-between bg-purple-400 text-sm rounded-full px-4 py-1 cursor-pointer hover:bg-purple-600 ${
-                    selectedTag === tag ? "ring-2 ring-white" : ""
-                  }`}
-                  onClick={() => setSelectedTag(tag === selectedTag ? null : tag)} // toggle tag
-                >
-                  <span>#{tag}</span>
-                  {/* Bạn có thể tính số bài viết theo tag tại đây nếu muốn */}
-                </li>
-              ))}
-            </ul>
-        </div>
-      </div>
-
       {/* Comment Modal */}
       {showCommentModal && selectedPost && (
         <CommentModal 
@@ -707,6 +682,7 @@ function PostCreationButton() {
       setImages([]);
       setImagePreviews([]);
       setIsOpen(false);
+      window.location.reload();
     } else {
       console.error("Lỗi khi đăng bài viết");
     }
