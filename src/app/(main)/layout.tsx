@@ -1,11 +1,12 @@
 'use client';
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import "../globals.css";
 import Link from "next/link";
 import Image from "next/image";
 import { FaFacebookF, FaInstagram, FaLinkedinIn } from 'react-icons/fa';
-import UserProfile from "@components/userprofile/UserProfile";
+import UserProfile from "@components/userprofile/UserProfile"; // Dùng useAuth từ context gốc đã bọc ở layout.tsx
+import { usePathname } from 'next/navigation';
 
 type Props = {
   children: ReactNode;
@@ -13,6 +14,18 @@ type Props = {
 
 export default function MainLayout({ children }: Props) {
   const [active, setActive] = useState("home");
+  const pathname = usePathname(); // Sử dụng usePathname thay vì useRouter
+  
+  // Sử dụng useEffect để cập nhật active state dựa trên pathname
+  useEffect(() => {
+    if (pathname === '/') {
+      setActive('home');
+    } else if (pathname === '/share-space') {
+      setActive('share');
+    } else if (pathname === '/aboutus') {
+      setActive('about');
+    }
+  }, [pathname]);
 
   return (
     <>

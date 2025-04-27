@@ -64,47 +64,33 @@ const LocationMarkers = ({ provinceGid, map, shouldClear, geojsonLayer, onLocati
   };
 
   const addLocationToDatabase = async (
-    name: string,
-    description: string | null,
     lat: number,
     lng: number,
     provinceGid: number,
-  ) => {
+  ): Promise<string | null> => {
     try {
       const response = await fetch('/api/locations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description, lat, lng, provinceGid }),
+        body: JSON.stringify({lat, lng, provinceGid }),
       });
   
       const result = await response.json();
   
       if (result.error) {
         alert('Có lỗi khi thêm địa điểm.');
+        return null;
       } else {
         alert('Địa điểm đã được thêm thành công!');
-  
-        // 🎯 Tạo icon và marker mới
-        const pulseIcon = ((L.icon as unknown as LIconExtended).pulse({
-          iconSize: [20, 20],
-          color: 'black',
-          heartbeat: 1
-        })) as L.Icon;
-  
-        const newMarker = L.marker([lat, lng], { icon: pulseIcon })
-          .addTo(map)
-          .bindPopup(`<strong>${name}</strong><br/>${description || ''}`);
-  
-        setMarkers(prev => [...prev, newMarker]);
-        if (onLocationAdded) {
-          onLocationAdded();
-        }
+        return result.data._id; // 🟢 Trả về id
       }
     } catch (error) {
       console.error('Error adding location to database:', error);
       alert('Có lỗi khi thêm địa điểm.');
+      return null;
     }
   };
+  
   
 
   const isLatLngInProvince = (lat: number, lng: number): boolean => {
@@ -139,38 +125,28 @@ const LocationMarkers = ({ provinceGid, map, shouldClear, geojsonLayer, onLocati
 
   const handleMapClick = async (e: L.LeafletMouseEvent) => {
     const { lat, lng } = e.latlng;
-
+  
     if (!provinceGid || !isLatLngInProvince(lat, lng)) {
       alert('Bạn chỉ được phép thêm địa điểm trong khu vực tỉnh đã chọn!');
       return;
     }
-
+  
     if (!popupVisible) {
       const existingLocation = await checkLocationInDatabase(lat, lng, provinceGid);
-
+  
       if (!existingLocation) {
         const isConfirmed = window.confirm('Vị trí này chưa có trong cơ sở dữ liệu. Bạn có muốn thêm địa điểm không?');
-        if (isConfirmed) {
-          const name = prompt("Nhập tên địa điểm:");
-          const description = prompt("Nhập mô tả địa điểm:");
-          if (name) {
-            await addLocationToDatabase(name, description, lat, lng, provinceGid);
-          }
-        }
+            const locationId = await addLocationToDatabase( lat, lng, provinceGid);
+            console.log(locationId);
+            router.push(`/admin/locations/new/${locationId}`);
       } else {
         alert('Vị trí này đã có trong cơ sở dữ liệu.');
       }
-
+  
       setPopupVisible(true);
-    } else {
-      const name = prompt("Nhập tên địa điểm:");
-      const description = prompt("Nhập mô tả địa điểm:");
-      if (name) {
-        await addLocationToDatabase(name, description, lat, lng, provinceGid);
-      }
     }
   };
-
+  
   useEffect(() => {
     if (!map || !provinceGid) return;
 

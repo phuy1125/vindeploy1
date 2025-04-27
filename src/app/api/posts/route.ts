@@ -19,6 +19,7 @@
     content: string;
     author_id: string;
     locationRaw: string;
+    provinceGid: number | null; 
     timestamp: Date;
     tags: string[];
     media: {
@@ -61,6 +62,10 @@
             const tagsRaw = Array.isArray(fields.tags) ? fields.tags[0] : fields.tags ?? '';
             const author_id = Array.isArray(fields.author_id) ? fields.author_id[0] : fields.author_id ?? '';
             const locationRaw = Array.isArray(fields.location) ? fields.location[0] : fields.location ?? '{}';
+             // Add provinceGid parsing
+            const provinceGidRaw = Array.isArray(fields.provinceGid) ? fields.provinceGid[0] : fields.provinceGid ?? null;
+            // Convert to number or null
+            const provinceGid = provinceGidRaw ? parseInt(provinceGidRaw, 10) : null;
             const tags = tagsRaw.split(',').map((tag) => tag.trim());
             console.log(locationRaw);
             const newPost = {
@@ -68,6 +73,7 @@
               content,
               author_id: new ObjectId(author_id),
               locationRaw,
+              provinceGid,
               timestamp: new Date(),
               status: 'active',
               tags,
@@ -182,5 +188,75 @@
         { message: 'Failed to fetch posts', error: error instanceof Error ? error.message : error },
         { status: 500 }
       );
+    }
+  }
+
+  export async function PATCH(req: Request) {
+    try {
+      // Lấy URL từ request
+      const url = new URL(req.url);
+      // Lấy postId từ query parameters
+      const postId = url.searchParams.get('postId');
+    
+      if (!postId) {
+        return NextResponse.json({ message: 'Post ID is required' }, { status: 400 });
+      }
+    
+      // Đọc body từ request
+      const body = await req.json();
+      const { status } = body;
+    
+      if (!status || status !== 'active') {
+        return NextResponse.json({ message: 'Invalid status' }, { status: 400 });
+      }
+    
+      // Kết nối đến MongoDB và cập nhật trạng thái bài viết
+      const client = await clientPromise;
+      const db = client.db();
+      const postsCollection = db.collection('posts');
+    
+      // Cập nhật trạng thái của bài viết thành 'active'
+      const result = await postsCollection.updateOne(
+        { _id: new ObjectId(postId) },
+        { $set: { status: 'active' } }
+      );
+    
+      if (result.modifiedCount === 0) {
+        return NextResponse.json({ message: 'Failed to update post status' }, { status: 400 });
+      }
+    
+      return NextResponse.json({ message: 'Post status updated to active' }, { status: 200 });
+    } catch (error) {
+      console.error('Error updating post status:', error);
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      return NextResponse.json({ message: 'Server error', error: message }, { status: 500 });
+    }
+  }
+  
+  export async function DELETE(req: Request) {
+    try {
+      const { searchParams } = new URL(req.url);
+      const postId = searchParams.get('postId');
+  
+      if (!postId) {
+        return NextResponse.json({ message: 'Post ID is required' }, { status: 400 });
+      }
+  
+      const client = await clientPromise;
+      const db = client.db();
+      const postsCollection = db.collection('posts');
+  
+      // Xóa bài viết từ database
+      const result = await postsCollection.deleteOne({ _id: new ObjectId(postId) });
+  
+      if (result.deletedCount === 0) {
+        return NextResponse.json({ message: 'Post not found or could not be deleted' }, { status: 404 });
+      }
+  
+      return NextResponse.json({ message: 'Post deleted successfully' }, { status: 200 });
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      return NextResponse.json({ message: 'Server error', error: message }, { status: 500 });
     }
   }
