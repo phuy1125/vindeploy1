@@ -118,12 +118,6 @@ export default function Login() {
                     Ghi nhớ tài khoản
                   </label>
                 </div>
-
-                <div className="text-sm">
-                  <Link href="/forgot-password" className="text-blue-600 hover:underline font-medium">
-                    Quên mật khẩu?
-                  </Link>
-                </div>
               </div>
 
               <div className="!mt-12">
