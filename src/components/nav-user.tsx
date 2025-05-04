@@ -1,5 +1,5 @@
 "use client"
-
+import { useAdminAuth } from "@/context/AdminAuthContext"
 import {
   IconCreditCard,
   IconDotsVertical,
@@ -39,7 +39,7 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
-
+  const { logout } = useAdminAuth()
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -98,7 +98,8 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+           {/* Log out với onSelect */}
+           <DropdownMenuItem onSelect={logout}>
               <IconLogout />
               Log out
             </DropdownMenuItem>
