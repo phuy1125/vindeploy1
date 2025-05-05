@@ -30,21 +30,24 @@ const sendVerificationEmail = async (email: string, token: string) => {
 
   // Email HTML với CSS Inline
   const htmlContent = `
-    <html>
-      <body>
-        <h2 style="font-size: 24px; color: #333333;">Chào mừng bạn đến với VintelliTour!</h2>
-        <p style="font-size: 16px; color: #555555;">Vui lòng nhấn vào nút dưới đây để xác thực tài khoản của bạn:</p>
-        <a href="${verificationLink}" 
-           style="background-color: blue; color: white; padding: 14px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; border-radius: 5px; margin-top: 10px;">
-           Xác thực tài khoản
-        </a>
-        <p style="font-size: 14px; color: #555555; margin-top: 20px;">
-          Hoặc bạn có thể sao chép và dán đường link này vào trình duyệt của bạn: <br>
-          <a href="${verificationLink}" style="color: #007bff;">${verificationLink}</a>
+    <div style="background-color:#f4f8ff;padding:40px 0;font-family:Arial,sans-serif;">
+      <div style="max-width:500px;margin:0 auto;background:#ffffff;border-radius:12px;padding:40px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.1)">
+        <h2 style="color:#1e3a8a;font-size:24px;margin-bottom:16px">Chào mừng đến với VintelliTour!</h2>
+        <p style="color:#334155;font-size:16px;margin-bottom:32px">
+          Vui lòng nhấn nút bên dưới để xác thực tài khoản của bạn và bắt đầu hành trình du lịch tuyệt vời cùng chúng tôi.
         </p>
-      </body>
-    </html>
+        <a href="${verificationLink}" 
+          style="display:inline-block;padding:12px 24px;background-color:#2563eb;color:#ffffff;
+          text-decoration:none;border-radius:8px;font-size:16px;font-weight:bold">
+          Xác thực tài khoản
+        </a>
+      </div>
+      <p style="text-align:center;margin-top:24px;color:#94a3b8;font-size:12px">
+        © 2025 VintelliTour. Mọi quyền được bảo lưu.
+      </p>
+    </div>
   `;
+
 
   const mailOptions = {
     from: process.env.EMAIL_USER,
