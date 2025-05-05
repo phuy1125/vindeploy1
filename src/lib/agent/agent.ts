@@ -1,5 +1,5 @@
 import { Intent, GraphAnnotation } from "./state";
-import { AIMessage } from "@langchain/core/messages";
+import { AIMessage, HumanMessage } from "@langchain/core/messages";
 
 import { z } from "zod";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
@@ -12,21 +12,19 @@ import {
 } from "@langchain/langgraph";
 import {
   CLASSIFY_INTENT_PROMPT,
-  SYSTEM_PROMPT_TEMPLATE,
+  GENERATE_ITINERARY_TEMPLATE,
   WEBSITE_INFO_PROMPT,
   SEARCH_SYSTEM_PROMPT,
+  ADD_ITINERARY_PROMPT,
+  GENERAL_PROMPT,
 } from "./prompt";
 import { TOOLS } from "../agent/tools";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import "dotenv/config";
+import { formatMessages, getRecentMessages } from "./utils";
 
 // MemorySaver instance for saving state
 const memory = new MemorySaver();
-
-// Function to generate a random thread_id between 1 and 100000
-function generateThreadId(): number {
-  return Math.floor(Math.random() * 100000) + 1;
-}
 
 const intentSchema = z.object({
   query: z.string().describe("The user query or input to classify the intent"),
@@ -39,41 +37,11 @@ const intentSchema = z.object({
       Intent.Destination,
       Intent.Transportation,
       Intent.Activities,
+      Intent.Itinerary,
+      Intent.GenerateItinerary,
     ])
     .describe("The type of intent"),
 });
-
-function buildContextMessage(messages: any[], limit = 4): string {
-  const filtered = messages.filter(
-    (m) =>
-      m.type === "user" ||
-      m.role === "user" ||
-      m.type === "ai" ||
-      m.role === "assistant"
-  );
-
-  if (filtered.length === 0 && messages.length > 0) {
-    // Nếu filter không có gì, fallback lấy thẳng tin nhắn cuối
-    return messages[messages.length - 1]?.content || "";
-  }
-
-  if (filtered.length <= 1) {
-    const lastMessage = filtered[filtered.length - 1];
-    if (!lastMessage) return "";
-    return lastMessage.content;
-  }
-
-  const recentMessages = filtered.slice(-limit);
-
-  const context = recentMessages
-    .map((msg) => {
-      const prefix = msg.type === "user" || msg.role === "user" ? "User" : "AI";
-      return `${prefix}: ${msg.content}`;
-    })
-    .join("\n");
-
-  return context;
-}
 
 async function classifyIntent(
   state: typeof GraphAnnotation.State
@@ -83,11 +51,13 @@ async function classifyIntent(
     temperature: 0,
   }).withStructuredOutput(intentSchema);
 
-  const contextMessage = buildContextMessage(state.messages);
+  const contextMessage = formatMessages(state.messages.slice(-3)); // 👈 sử dụng formatMessages
+
+  console.log(">>> CONTEXT_MESSAGE:", contextMessage);
 
   if (!contextMessage.trim()) {
     console.warn("No valid conversation history. Defaulting to 'general'.");
-    return { intent: Intent.General };
+    return { intent: Intent.General, userId: state.userId };
   }
 
   const lastIntent = state.intent || "general";
@@ -108,22 +78,26 @@ async function classifyIntent(
 
   return {
     intent: classifiedIntent,
+    userId: state.userId, // giữ lại userId để truyền tiếp
   };
 }
 
-function routeModelOutput(state: typeof MessagesAnnotation.State): string {
-  const messages = state.messages;
-  const lastMessage = messages[messages.length - 1];
-  if ((lastMessage as AIMessage)?.tool_calls?.length || 0 > 0) {
+function shouldContinue({ messages }: typeof MessagesAnnotation.State) {
+  const lastMessage = messages[messages.length - 1] as AIMessage;
+
+  // If the LLM makes a tool call, then we route to the "tools" node
+  if (lastMessage.tool_calls?.length) {
     return "tools";
-  } else {
-    return END;
   }
+  // Otherwise, we stop (reply to the user) using the special "__end__" node
+  return END;
 }
 
 async function callModel(
   state: typeof GraphAnnotation.State
 ): Promise<typeof GraphAnnotation.Update> {
+  console.log("UserID:", state.userId);
+
   const model = new ChatGoogleGenerativeAI({
     model: "gemini-2.0-flash",
     temperature: 0.7,
@@ -133,8 +107,11 @@ async function callModel(
   const intent = state.intent;
 
   switch (intent) {
-    case "general":
-      promptTemplate = SYSTEM_PROMPT_TEMPLATE;
+    case "generateItinerary":
+      promptTemplate = GENERATE_ITINERARY_TEMPLATE.replace(
+        "{userId}",
+        state.userId
+      );
       break;
     case "search":
       promptTemplate = SEARCH_SYSTEM_PROMPT;
@@ -154,11 +131,17 @@ async function callModel(
     case "activities":
       promptTemplate = SEARCH_SYSTEM_PROMPT;
       break;
+    case "addItinerary":
+      promptTemplate = ADD_ITINERARY_PROMPT.replace("{userId}", state.userId);
+      break;
+    case "general":
+      promptTemplate = GENERAL_PROMPT;
+      break;
     default:
-      promptTemplate = SYSTEM_PROMPT_TEMPLATE;
+      promptTemplate = GENERAL_PROMPT;
   }
 
-  console.log(">>> SYSTEM_PROMPT:", promptTemplate);
+  console.log("Prompt Template:", promptTemplate);
 
   const response = await model.invoke([
     {
@@ -170,6 +153,7 @@ async function callModel(
 
   return {
     messages: [...state.messages, response],
+    userId: state.userId,
   };
 }
 
@@ -180,7 +164,7 @@ const workflow = new StateGraph(GraphAnnotation)
   .addNode("tools", new ToolNode(TOOLS))
   .addEdge(START, "classify_intent")
   .addEdge("classify_intent", "callModel")
-  .addConditionalEdges("callModel", routeModelOutput)
+  .addConditionalEdges("callModel", shouldContinue)
   .addEdge("tools", "callModel");
 
 export const graph = workflow.compile({ checkpointer: memory });
