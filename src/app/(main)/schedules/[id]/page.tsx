@@ -50,6 +50,36 @@ export default function EditSchedulePage({ params }) {
           tempId: day._id || `day-${index}-${Date.now()}` // Tạo ID tạm thời nếu không có _id
         }));
       }
+      
+      // Chuyển đổi định dạng dữ liệu từ DB để phù hợp với giao diện
+      if (data && data.itinerary) {
+        data.itinerary = data.itinerary.map(day => {
+          // Định dạng lại dữ liệu cho mỗi thời điểm trong ngày
+          const formatTimeOfDay = (timeOfDay) => {
+            if (!day[timeOfDay] || !day[timeOfDay].activities || day[timeOfDay].activities.length === 0) {
+              return { activity: '', cost: 0 };
+            }
+            
+            // Ghép các mô tả hoạt động thành một chuỗi và tính tổng chi phí
+            const activity = day[timeOfDay].activities
+              .map(act => act.description)
+              .filter(desc => desc && desc.trim().length > 0)
+              .join('\n');
+              
+            const cost = day[timeOfDay].activities.reduce((sum, act) => sum + (act.cost || 0), 0);
+            
+            return { activity, cost };
+          };
+          
+          return {
+            ...day,
+            morning: formatTimeOfDay('morning'),
+            afternoon: formatTimeOfDay('afternoon'),
+            evening: formatTimeOfDay('evening')
+          };
+        });
+      }
+      
       setItinerary(data);
     } catch (error) {
       console.error("Failed to load itinerary", error);
@@ -143,10 +173,40 @@ export default function EditSchedulePage({ params }) {
         throw new Error("Không tìm thấy userId trong localStorage");
       }
 
-      // Loại bỏ tempId trước khi gửi lên server
-      const cleanedItinerary = itinerary.itinerary.map(day => {
-        const { tempId, ...cleanDay } = day;
-        return cleanDay;
+      // Chuyển đổi dữ liệu về định dạng của database trước khi gửi
+      const prepareItineraryForSave = itinerary.itinerary.map(day => {
+        // Chuyển đổi định dạng dữ liệu cho mỗi thời điểm trong ngày
+        const formatTimeOfDayForSave = (timeOfDay) => {
+          if (!day[timeOfDay] || !day[timeOfDay].activity) {
+            return { activities: [] };
+          }
+          
+          // Tách nội dung hoạt động thành các hoạt động riêng biệt (dựa vào dấu xuống dòng)
+          const activities = day[timeOfDay].activity
+            .split('\n')
+            .filter(line => line.trim().length > 0)
+            .map(description => ({
+              description,
+              cost: 0 // Chi phí mặc định cho từng hoạt động
+            }));
+          
+          // Nếu có ít nhất một hoạt động, đặt tổng chi phí cho hoạt động đầu tiên
+          if (activities.length > 0) {
+            activities[0].cost = day[timeOfDay].cost || 0;
+          }
+          
+          return { activities };
+        };
+        
+        // Loại bỏ tempId trước khi gửi lên server
+        const { tempId, morning, afternoon, evening, ...restDay } = day;
+        
+        return {
+          ...restDay,
+          morning: formatTimeOfDayForSave('morning'),
+          afternoon: formatTimeOfDayForSave('afternoon'),
+          evening: formatTimeOfDayForSave('evening')
+        };
       });
 
       const res = await fetch(`/api/schedules/${id}`, {
@@ -160,7 +220,7 @@ export default function EditSchedulePage({ params }) {
             destination: itinerary.destination,
             duration: itinerary.duration,
             startDate: itinerary.startDate,
-            itinerary: cleanedItinerary
+            itinerary: prepareItineraryForSave
           }
         }),
       });
@@ -280,6 +340,7 @@ export default function EditSchedulePage({ params }) {
               value={itinerary.duration || ''}
               onChange={(e) => handleGeneralInfoChange('duration', e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              readOnly
             />
           </div>
           
