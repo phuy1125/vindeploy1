@@ -6,7 +6,7 @@ import { ObjectId } from "mongodb";
 export async function GET(req: NextRequest) {
   try {
     const client = await clientPromise;
-    const db = client.db("testbando");
+    const db = client.db("Vintellitour");
 
     const userId = req.nextUrl.searchParams.get("userId");
 
@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
         _id: day._id.toString(),  // Chuyển đổi _id trong từng ngày
       })),
     }));
+
 
     return NextResponse.json(schedules, { status: 200 });
   } catch (error) {
