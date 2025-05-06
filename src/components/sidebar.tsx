@@ -1,158 +1,273 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
+import { MessageSquare, PenSquare, MoreHorizontal } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
-import {
-  MessageSquare,
-  Search,
-  Bookmark,
-  Bell,
-  Lightbulb,
-  PenSquare,
-  Plus,
-  ChevronRight,
-  Map,
-  Settings,
-} from "lucide-react";
 
-export default function Sidebar() {
-  const [activeItem, setActiveItem] = useState("chats");
-  const [userName, setUserName] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [userID, setUserID] = useState<string | null>(null);
 
-  const navItems = [
-    { id: "chats", label: "Trò chuyện", icon: MessageSquare, count: 4 },
-    { id: "explore", label: "Khám phá", icon: Search },
-    { id: "saved", label: "Đã lưu", icon: Bookmark },
-    { id: "maps", label: "Bản đồ", icon: Map },
-    { id: "inspiration", label: "Cảm hứng", icon: Lightbulb },
-    { id: "create", label: "Tạo lịch trình", icon: PenSquare },
-  ];
+type SidebarProps = {
+  onNewThread: () => void;
+  onSelectThread: (threadId: string) => void;
+  selectedThreadId: string | null;
+};
 
-  // Lấy thông tin người dùng từ API (dựa trên email trong localStorage)
-  useEffect(() => {
-    const email = localStorage.getItem("userEmail"); // Lấy email từ localStorage (hoặc session)
+export type SidebarHandle = {
+  reloadThreads: () => void;
+};
 
-    if (email) {
-      fetch(`/api/getUserInfo?email=${email}`)
-        .then((response) => response.json())
+const Sidebar = forwardRef<SidebarHandle, SidebarProps>(
+  ({ onNewThread, onSelectThread, selectedThreadId }, ref) => {
+    const [userName, setUserName] = useState<string | null>(null);
+    const [userEmail, setUserEmail] = useState<string | null>(null);
+    const [userID, setUserID] = useState<string | null>(null);
+    const [chatCount, setChatCount] = useState<number>(0);
+    const [threads, setThreads] = useState<any[]>([]);
+    const [showDelete, setShowDelete] = useState<string | null>(null);
+    const [menuPosition, setMenuPosition] = useState<{
+      x: number;
+      y: number;
+    } | null>(null);
+
+    const reloadThreads = () => {
+      const userId = localStorage.getItem("userId");
+      if (!userId) return;
+
+      fetch(`/api/chatbox/threads/search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      })
+        .then((res) => res.json())
         .then((data) => {
-          setUserName(data.name); // Lấy tên người dùng từ dữ liệu trả về
-          setUserEmail(data.email); // Lấy email người dùng
-          setUserID(data.userID); // Lấy userID từ dữ liệu trả về
+          setChatCount(data.length);
+          const threadsWithMessages = data
+            .filter((thread: any) => thread.values?.messages?.length > 0)
+            .sort(
+              (a: any, b: any) =>
+                new Date(b.created_at).getTime() -
+                new Date(a.created_at).getTime()
+            )
+            .map((thread: any) => ({
+              id: thread.thread_id,
+              name: thread.values.messages[0]?.content || "Cuộc trò chuyện mới",
+              createdAt: thread.created_at,
+            }));
+          setThreads(threadsWithMessages);
+        });
+    };
+
+    useImperativeHandle(ref, () => ({
+      reloadThreads,
+    }));
+
+    useEffect(() => {
+      const userId = localStorage.getItem("userId");
+      if (userId) {
+        fetch(`/api/users/${userId}/getUserInfo`)
+          .then((res) => res.json())
+          .then((data) => {
+            setUserName(data.name);
+            setUserEmail(data.email);
+            setUserID(data.userID);
+          });
+
+        reloadThreads();
+      }
+    }, []);
+
+    const handleDelete = (threadId: string) => {
+      fetch(`http://localhost:2024/threads/${threadId}`, {
+        method: "DELETE",
+      })
+        .then((res) => {
+          if (res.ok) {
+            setThreads((prevThreads) =>
+              prevThreads.filter((thread) => thread.id !== threadId)
+            );
+
+            setChatCount((prevCount) => prevCount - 1);
+
+            if (threadId === selectedThreadId) {
+              onSelectThread(""); // Reset threadId trong ChatInterface
+            }
+          } else {
+            console.error("Failed to delete thread");
+          }
         })
         .catch((error) => {
-          console.error("Error fetching user info:", error);
+          console.error("Error deleting thread:", error);
+        })
+        .finally(() => {
+          setShowDelete(null);
+          setMenuPosition(null);
         });
-    }
-  }, []);
+    };
 
-  return (
-    <div className="w-full h-[98%] flex flex-col bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-      {/* Logo - Updated to match website theme */}
+    useEffect(() => {
+      const handleClickOutside = () => {
+        setShowDelete(null);
+        setMenuPosition(null);
+      };
 
-      {/* Navigation Menu */}
-      <nav className="flex-1 py-4 px-3">
-        <div className="mb-4 px-3">
-          <h3 className="text-xs uppercase tracking-wider text-gray-500 font-medium">
+      window.addEventListener("click", handleClickOutside);
+      return () => window.removeEventListener("click", handleClickOutside);
+    }, []);
+
+    return (
+      <div className="w-full h-full flex flex-col bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+        {/* Header */}
+        <div className="p-4">
+          <h3 className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-3">
             Menu chính
           </h3>
+
+          {/* Trò chuyện */}
+          <div className="w-full flex items-center justify-between px-4 py-3 text-sm rounded-xl bg-gradient-to-r from-teal-600 to-teal-500 text-white font-semibold shadow">
+            <div className="flex items-center gap-3">
+              <MessageSquare size={18} />
+              <span>Trò chuyện</span>
+              <span className="ml-2 text-xs bg-white text-teal-700 px-2 py-0.5 rounded-full font-semibold shadow-sm">
+                {chatCount}
+              </span>
+            </div>
+          </div>
         </div>
-        <ul className="space-y-1">
-          {navItems.map((item) => (
-            <li key={item.id}>
-              <button
-                onClick={() => setActiveItem(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 ${
-                  activeItem === item.id
-                    ? "bg-gradient-to-r from-teal-600 to-teal-500 text-white font-medium"
-                    : "text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                <div
-                  className={`${
-                    activeItem === item.id ? "text-teal-100" : "text-gray-400"
+
+        {/* Danh sách trò chuyện */}
+        <div className="px-3 overflow-y-auto max-h-[300px]">
+          <h4 className="text-xs font-semibold text-gray-600 mb-2">Gần đây:</h4>
+          <ul className="flex flex-col gap-1">
+            {threads.map((thread, index) => {
+              const isActive = thread.id === selectedThreadId;
+
+              return (
+                <li
+                  key={index}
+                  onClick={() => onSelectThread(thread.id)}
+                  className={`px-3 py-2 rounded-md cursor-pointer transition-colors relative ${
+                    isActive
+                      ? "bg-teal-600 text-white font-semibold"
+                      : "hover:bg-gray-100 text-gray-800"
                   }`}
                 >
-                  <item.icon
-                    size={18}
-                    strokeWidth={activeItem === item.id ? 2.5 : 2}
-                  />
-                </div>
-                <span>{item.label}</span>
-                {item.count && (
-                  <span className="ml-auto text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-medium">
-                    {item.count}
-                  </span>
-                )}
-                {activeItem === item.id && (
-                  <ChevronRight size={16} className="ml-auto text-teal-100" />
-                )}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </nav>
+                  <div className="flex justify-between items-center">
+                    <div className="truncate text-sm">{thread.name}</div>
 
-      {/* New Chat Button */}
-      <div className="px-4 pb-4">
-        <button className="w-full bg-gradient-to-r from-teal-600 to-teal-500 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all hover:shadow-md hover:from-teal-700 hover:to-teal-600">
-          <Plus size={16} />
-          <span>Cuộc trò chuyện mới</span>
-        </button>
-      </div>
+                    <div className="relative z-10">
+                      <button
+                        className="p-1 rounded-full hover:bg-white/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const rect = e.currentTarget.getBoundingClientRect();
 
-      {/* User Info Section */}
-      <div className="p-4 border-t border-gray-100 mb-0">
-        <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-all">
-          <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-500 rounded-full flex items-center justify-center text-sm font-medium text-white shadow-md">
-            {userName ? userName.charAt(0).toUpperCase() : "NM"}{" "}
-            {/* Hiển thị chữ cái đầu tiên của tên người dùng */}
-          </div>
-          <div className="text-sm">
-            <div className="font-medium text-gray-800">
-              {userName || "Not Found"}
-            </div>{" "}
-            {/* Hiển thị tên người dùng */}
-            <div className="text-gray-400 text-xs">
-              {userEmail || null}
-            </div>{" "}
-            {/* Hiển thị email */}
-          </div>
-          <div className="ml-auto flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M8 8.5C8.27614 8.5 8.5 8.27614 8.5 8C8.5 7.72386 8.27614 7.5 8 7.5C7.72386 7.5 7.5 7.72386 7.5 8C7.5 8.27614 7.72386 8.5 8 8.5Z"
-                fill="#9CA3AF"
-                stroke="#9CA3AF"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M8 4.5C8.27614 4.5 8.5 4.27614 8.5 4C8.5 3.72386 8.27614 3.5 8 3.5C7.72386 3.5 7.5 3.72386 7.5 4C7.5 4.27614 7.72386 4.5 8 4.5Z"
-                fill="#9CA3AF"
-                stroke="#9CA3AF"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M8 12.5C8.27614 12.5 8.5 12.2761 8.5 12C8.5 11.7239 8.27614 11.5 8 11.5C7.72386 11.5 7.5 11.7239 7.5 12C7.5 12.2761 7.72386 12.5 8 12.5Z"
-                fill="#9CA3AF"
-                stroke="#9CA3AF"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+                          if (showDelete === thread.id) {
+                            setShowDelete(null);
+                            setMenuPosition(null);
+                          } else {
+                            setShowDelete(thread.id);
+                            setMenuPosition({
+                              x: rect.right - 140,
+                              y: rect.bottom + 8,
+                            });
+                          }
+                        }}
+                      >
+                        <MoreHorizontal
+                          size={16}
+                          className={isActive ? "text-white" : "text-gray-600"}
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`text-[11px] ${
+                      isActive ? "text-white/80" : "text-gray-500"
+                    }`}
+                  >
+                    {formatDistanceToNow(new Date(thread.createdAt), {
+                      addSuffix: true,
+                    })}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+
+        {/* Nút tạo mới */}
+        <div className="mt-auto px-4 py-4">
+          <button
+            onClick={onNewThread}
+            className="w-full bg-gradient-to-r from-teal-600 to-teal-500 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all hover:shadow-md hover:from-teal-700 hover:to-teal-600 mb-3"
+          >
+            <span>Cuộc trò chuyện mới</span>
+          </button>
+          <Link href="/schedules">
+          <button className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-600 rounded-lg hover:bg-gray-100 transition-all">
+            <PenSquare size={18} />
+            <span>Lịch trình của bạn</span>
+          </button>
+          </Link>
+        </div>
+
+        {/* Thông tin người dùng */}
+        <div className="p-4 border-t border-gray-100">
+          <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-all">
+            <div className="w-12 h-10 bg-gradient-to-br from-teal-400 to-teal-500 rounded-full flex items-center justify-center text-lg font-semibold text-white shadow-md">
+              {userName
+                ? userName
+                    .trim()
+                    .split(" ")
+                    .slice(-2)
+                    .map((word) => word.charAt(0).toUpperCase())
+                    .join("")
+                : "NM"}
+            </div>
+            <div className="text-sm">
+              <div className="font-medium text-gray-800">
+                {userName || "Không rõ"}
+              </div>
+              <div className="text-gray-400 text-xs">{userEmail || ""}</div>
+            </div>
           </div>
         </div>
+
+        {/* Popup delete */}
+        {showDelete && menuPosition && (
+          <div
+            className="fixed z-[9999] bg-white border border-gray-200 rounded-md shadow-lg w-36"
+            style={{ left: menuPosition.x, top: menuPosition.y }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+              onClick={() => handleDelete(showDelete)}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+              Xóa
+            </button>
+          </div>
+        )}
       </div>
-    </div>
-  );
-}
+    );
+  }
+);
+
+Sidebar.displayName = "Sidebar";
+
+export default Sidebar;

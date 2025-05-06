@@ -38,10 +38,12 @@ export default function Login() {
         if (data.token) {
           localStorage.setItem('authToken', data.token);
           localStorage.setItem('userId', data.userId || '');
-
+          
           login(data.token); // ✅ Cập nhật trạng thái vào context
-
           router.push('/'); // ✅ Điều hướng sau khi context đã có thông tin
+          window.location.reload();
+          window.location.href = '/';
+          
         } else {
           setError('Token không hợp lệ.');
         }
