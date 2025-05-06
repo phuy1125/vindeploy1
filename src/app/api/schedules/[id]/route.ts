@@ -12,7 +12,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 
     const client = await clientPromise;
-    const db = client.db("testbando");
+    const db = client.db("Vintellitour");
 
     // Kiểm tra và chuyển đổi id của lịch trình
     let itineraryIdObj;
@@ -62,7 +62,7 @@ export async function DELETE(
     }
 
     const client = await clientPromise;
-    const db = client.db("testbando");
+    const db = client.db("Vintellitour");
 
     // Kiểm tra xem lịch trình có tồn tại và thuộc về user không
     let userIdQuery;
@@ -144,7 +144,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 
     const client = await clientPromise;
-    const db = client.db("testbando");
+    const db = client.db("Vintellitour");
 
     // Kiểm tra và chuyển đổi id của lịch trình
     let itineraryIdObj;
