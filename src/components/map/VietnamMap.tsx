@@ -173,7 +173,7 @@
                           : ""
                       }
                       <div style="text-align: center;">
-                        <a href="/province/${feature.properties.gid}?tab=streetview" target="_blank" style="display: inline-block; padding: 8px 16px; background-color: #28a745; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px;">
+                        <a href="/province/${feature.properties.gid}" target="_blank" style="display: inline-block; padding: 8px 16px; background-color: #28a745; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px;">
                           Xem thông tin và tham quan
                         </a>
                       </div>
