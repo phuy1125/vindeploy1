@@ -143,6 +143,7 @@ export default function ChatInterface({
         body: JSON.stringify({
           messages: formattedMessages,
           threadId: currentThreadId,
+          userId: localStorage.getItem("userId"),
         }),
       });
 

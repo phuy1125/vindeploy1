@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   try {
     // Lấy dữ liệu từ body của yêu cầu
     const body = await req.json();
-    const { messages, threadId } = body;
+    const { messages, threadId, userId } = body;
 
     // Kiểm tra nếu thiếu dữ liệu (messages hoặc threadId)
     if (!messages || !threadId) {
@@ -36,8 +36,11 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        assistant_id: assistantId, // Truyền assistant_id từ .env
-        input: { messages: messages }, // Truyền messages từ client
+        assistant_id: "agent", // Truyền assistant_id từ .env
+        input: {
+          messages: messages,
+          userId: userId, // Truyền userId từ client
+        }, // Truyền messages từ client
       }),
     });
 
